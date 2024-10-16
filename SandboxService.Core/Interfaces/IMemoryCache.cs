@@ -1,6 +1,6 @@
 ﻿using SandboxService.Core.Models;
 
-namespace SandboxService.Core;
+namespace SandboxService.Core.Interfaces;
 
 public interface IMemoryCache
 {
