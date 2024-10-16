@@ -2,6 +2,6 @@
 
 public class UserData
 {
-    public required string ApiKey { get; set; }
-    public required string SecretKey { get; set; }
+    public Guid UserId { get; set; }
+    public ICollection<Wallet> Wallets { get; set; } = [];
 }
