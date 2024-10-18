@@ -37,6 +37,9 @@ public class GlobalExceptionsMiddleware : IMiddleware
                 case SandboxExceptionType.RECORD_NOT_FOUND:
                     code = HttpStatusCode.NotFound;
                     break;
+                case SandboxExceptionType.INVALID_KEYS:
+                    code = HttpStatusCode.Forbidden;
+                    break;
             }
         }
 

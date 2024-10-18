@@ -2,5 +2,5 @@
 
 public class SandboxException(string message, SandboxExceptionType type) : Exception(message)
 {
-    public required SandboxExceptionType Type { get; set; } = type;
+    public SandboxExceptionType Type { get; set; } = type;
 }

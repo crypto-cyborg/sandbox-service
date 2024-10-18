@@ -14,6 +14,7 @@
   <ItemGroup>
     <ProjectReference Include="..\SandboxService.Core\SandboxService.Core.csproj" />
     <ProjectReference Include="..\SandboxService.Persistence\SandboxService.Persistence.csproj" />
+    <ProjectReference Include="..\SandboxService.Application\SandboxService.Application.csproj" />
   </ItemGroup>
 
 </Project>

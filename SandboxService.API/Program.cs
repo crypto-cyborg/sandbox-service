@@ -1,4 +1,9 @@
+using FluentValidation;
 using SandboxService.API;
+using SandboxService.Application.Data.Dtos;
+using SandboxService.Application.Services;
+using SandboxService.Application.Services.Interfaces;
+using SandboxService.Application.Validators;
 using SandboxService.Core.Interfaces;
 using SandboxService.Persistence;
 
@@ -11,8 +16,14 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddScoped<GlobalExceptionsMiddleware>();
 
+builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
+builder.Services.AddTransient<IValidator<SanboxInitializeRequest>, SandboxInitializeValidator>();
+
 builder.Services.AddSingleton<IMemoryCache, InMemoryCache>();
 builder.Services.AddScoped<ICacheService, CacheService>();
+
+builder.Services.AddScoped<IAccountService, AccountService>();
 
 var app = builder.Build();
 

@@ -1,4 +1,4 @@
-﻿using SandboxService.Core;
+﻿using SandboxService.Core.Interfaces;
 using SandboxService.Core.Models;
 
 namespace SandboxService.Persistence;
