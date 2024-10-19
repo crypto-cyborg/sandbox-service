@@ -1,11 +1,13 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
 using AutoMapper;
+using Microsoft.Extensions.Configuration;
 using SandboxService.Application.Data.Dtos;
 using SandboxService.Application.Services.Interfaces;
 using SandboxService.Core.Exceptions;
 using SandboxService.Core.Interfaces;
 using SandboxService.Core.Models;
+using SandboxService.Persistence;
 
 namespace SandboxService.Application.Services;
 
@@ -13,17 +15,18 @@ public class AccountService : IAccountService
 {
     private readonly IMapper _mapper;
     private readonly ICacheService _cacheService;
+    private readonly IConfiguration _configuration;
 
-    public AccountService(IMapper mapper, ICacheService cacheService)
+    public AccountService(IMapper mapper, ICacheService cacheService, IConfiguration configuration)
     {
         _mapper = mapper;
         _cacheService = cacheService;
+        _configuration = configuration;
     }
 
     public async Task<UserData> CreateSandboxUser(SanboxInitializeRequest request)
     {
         // TODO: Validate userId
-        // TODO: Validate api, secret keys
 
         var validation = await ValidateKeys(request.ApiKey, request.SecretKey);
 
@@ -32,7 +35,7 @@ public class AccountService : IAccountService
             throw new SandboxException("Keys are not valid", SandboxExceptionType.INVALID_KEYS);
         }
 
-        var userData = _mapper.Map<UserData>(request);
+        var userData = SandboxUserFactory.Create(request.UserId, request.ApiKey, request.SecretKey);
 
         _cacheService.Set(userData.UserId, userData);
 
@@ -44,7 +47,7 @@ public class AccountService : IAccountService
         try
         {
             var httpClient = new HttpClient();
-            var baseUrl = "https://api.binance.com/api/v3/";
+            var baseUrl = _configuration.GetSection("Binance:BaseUrl").Value;
             var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             var query = $"timestamp={timestamp}";
             var signature = Sign(query, secretKey);

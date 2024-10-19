@@ -1,6 +1,6 @@
 ﻿namespace SandboxService.Application.Data.Dtos;
 
-public class SanboxInitializeRequest
+public record class SanboxInitializeRequest
 {
     public Guid UserId { get; set; }
     public required string ApiKey { get; set; }

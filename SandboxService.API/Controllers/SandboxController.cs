@@ -1,6 +1,7 @@
 ﻿using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using SandboxService.Application.Data.Dtos;
+using SandboxService.Application.Services;
 using SandboxService.Application.Services.Interfaces;
 
 namespace SandboxService.API.Controllers;
@@ -19,7 +20,8 @@ public class SandboxController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Initialize(
         SanboxInitializeRequest request,
-        IValidator<SanboxInitializeRequest> validator)
+        IValidator<SanboxInitializeRequest> validator
+    )
     {
         var validation = validator.Validate(request);
 
@@ -31,5 +33,13 @@ public class SandboxController : ControllerBase
         var response = await _accountService.CreateSandboxUser(request);
 
         return Ok(response);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetPrice(string symbol, BinanceService binanceService)
+    {
+        var price = await binanceService.GetPrice(symbol);
+
+        return Ok(price);
     }
 }

@@ -2,6 +2,6 @@
 
 public class Currency
 {
-    public string Name { get; set; }
-    public string ShortName { get; set; }
+    public required string Name { get; set; }
+    public required string Code { get; set; }
 }

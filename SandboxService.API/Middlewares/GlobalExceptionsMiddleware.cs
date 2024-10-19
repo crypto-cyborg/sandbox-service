@@ -1,5 +1,4 @@
-﻿
-using System.Net;
+﻿using System.Net;
 using System.Reflection.Metadata;
 using System.Text.Json;
 using SandboxService.Core.Exceptions;
@@ -38,6 +37,9 @@ public class GlobalExceptionsMiddleware : IMiddleware
                     code = HttpStatusCode.NotFound;
                     break;
                 case SandboxExceptionType.INVALID_KEYS:
+                    code = HttpStatusCode.Forbidden;
+                    break;
+                case SandboxExceptionType.INSUFFICIENT_FUNDS:
                     code = HttpStatusCode.Forbidden;
                     break;
             }

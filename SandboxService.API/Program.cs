@@ -5,6 +5,7 @@ using SandboxService.Application.Services;
 using SandboxService.Application.Services.Interfaces;
 using SandboxService.Application.Validators;
 using SandboxService.Core.Interfaces;
+using SandboxService.Core.Models;
 using SandboxService.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,7 +24,9 @@ builder.Services.AddTransient<IValidator<SanboxInitializeRequest>, SandboxInitia
 builder.Services.AddSingleton<IMemoryCache, InMemoryCache>();
 builder.Services.AddScoped<ICacheService, CacheService>();
 
+builder.Services.AddScoped<IBinanceService, BinanceService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
+builder.Services.AddScoped<SpotTradeService>();
 
 var app = builder.Build();
 

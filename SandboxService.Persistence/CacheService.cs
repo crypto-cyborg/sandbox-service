@@ -1,4 +1,5 @@
-﻿using SandboxService.Core.Interfaces;
+﻿using SandboxService.Core.Exceptions;
+using SandboxService.Core.Interfaces;
 using SandboxService.Core.Models;
 
 namespace SandboxService.Persistence;
@@ -19,14 +20,14 @@ public class CacheService : ICacheService
             return value;
         }
 
-        throw new KeyNotFoundException("");
+        throw new SandboxException("User not found", SandboxExceptionType.RECORD_NOT_FOUND);
     }
 
     public void Set(Guid key, UserData value)
     {
         if (!_cache.Data.TryAdd(key, value))
         {
-            throw new ArgumentException("");
+            throw new SandboxException("User already exists", SandboxExceptionType.RECORD_EXISTS);
         }
     }
 
@@ -34,8 +35,7 @@ public class CacheService : ICacheService
     {
         if (!_cache.Data.Remove(key))
         {
-            throw new KeyNotFoundException("");
+            throw new SandboxException("User not found", SandboxExceptionType.RECORD_NOT_FOUND);
         }
     }
-
 }
