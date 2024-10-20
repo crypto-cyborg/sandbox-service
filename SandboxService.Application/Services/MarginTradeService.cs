@@ -38,14 +38,13 @@ public class MarginTradeService
 
         var position = new MarginPosition
         {
-            Id = Guid.NewGuid(),
             UserId = request.UserId,
             Currency = request.Currency,
+            Symbol = request.Symbol,
             Amount = request.Amount,
             EntryPrice = entryPrice,
             IsLong = request.IsLong,
             Leverage = request.Leverage,
-            OpenDate = DateTime.UtcNow,
         };
 
         user.MarginPositions.Add(position);
@@ -54,58 +53,54 @@ public class MarginTradeService
         return position;
     }
 
-    // public async Task ClosePositionAsync(Guid positionId, decimal currentPrice)
-    // {
-    //     var position = _positionRepository.Get().FirstOrDefault(p => p.Id == positionId);
+    public async Task<MarginPosition> ClosePosition(CloseMarginPositionRequest request)
+    {
+        var user = _cacheService.Get(request.UserId);
+        var position = user.MarginPositions.FirstOrDefault(p => p.Id == request.PositionId);
+        var currentPrice = (await _binanceService.GetPrice(position.Symbol)).Price;
 
-    //     if (position == null || position.IsClosed)
-    //         throw new InvalidOperationException("Позиция не найдена или уже закрыта.");
+        if (position == null || position.IsClosed)
+            throw new InvalidOperationException("Позиция не найдена или уже закрыта.");
 
-    //     var wallet = _walletRepository
-    //         .Get()
-    //         .FirstOrDefault(w =>
-    //             w.UserId == position.UserId && w.CurrencyId == position.CurrencyId
-    //         );
+        var wallet = user.Wallets.FirstOrDefault(w => w.Currency == position.Currency);
 
-    //     decimal pnl;
-    //     if (position.IsLong)
-    //         pnl = (currentPrice - position.EntryPrice) * position.Amount;
-    //     else
-    //         pnl = (position.EntryPrice - currentPrice) * position.Amount;
+        decimal pnl;
 
-    //     wallet.Value += pnl; // Обновляем баланс пользователя
-    //     position.IsClosed = true;
-    //     position.CloseDate = DateTime.UtcNow;
+        if (position.IsLong)
+            pnl = (currentPrice - position.EntryPrice) * position.Amount;
+        else
+            pnl = (position.EntryPrice - currentPrice) * position.Amount;
 
-    //     await _walletRepository.SaveChangesAsync();
-    // }
+        wallet.Balance += pnl;
+        position.IsClosed = true;
+        position.CloseDate = DateTime.UtcNow;
 
-    // public async Task CheckLiquidationAsync(Guid userId, int currencyId, decimal currentPrice)
-    // {
-    //     var positions = _positionRepository
-    //         .Get()
-    //         .Where(p => p.UserId == userId && p.CurrencyId == currencyId && !p.IsClosed);
+        return position;
+    }
 
-    //     foreach (var position in positions)
-    //     {
-    //         decimal marginUsed = (position.Amount * position.EntryPrice) / position.Leverage;
-    //         var wallet = _walletRepository
-    //             .Get()
-    //             .FirstOrDefault(w => w.UserId == userId && w.CurrencyId == currencyId);
+    public void CheckLiquidation(Guid userId, string currencyCode, decimal currentPrice)
+    {
+        var user = _cacheService.Get(userId);
 
-    //         decimal pnl = position.IsLong
-    //             ? (currentPrice - position.EntryPrice) * position.Amount
-    //             : (position.EntryPrice - currentPrice) * position.Amount;
+        var positions = user.MarginPositions.Where(p =>
+            p.Currency.Code == currencyCode && !p.IsClosed
+        );
 
-    //         // Ликвидация, если PnL + маржа меньше нуля
-    //         if (wallet.Value + pnl < marginUsed)
-    //         {
-    //             position.IsClosed = true;
-    //             position.CloseDate = DateTime.UtcNow;
-    //             wallet.Value += pnl;
+        foreach (var position in positions)
+        {
+            decimal marginUsed = position.Amount * position.EntryPrice / position.Leverage;
+            var wallet = user.Wallets.FirstOrDefault(w => w.Currency.Code == currencyCode);
 
-    //             await _walletRepository.SaveChangesAsync();
-    //         }
-    //     }
-    // }
+            decimal pnl = position.IsLong
+                ? (currentPrice - position.EntryPrice) * position.Amount
+                : (position.EntryPrice - currentPrice) * position.Amount;
+
+            if (wallet.Balance + pnl < marginUsed)
+            {
+                position.IsClosed = true;
+                position.CloseDate = DateTime.UtcNow;
+                wallet.Balance += pnl;
+            }
+        }
+    }
 }
