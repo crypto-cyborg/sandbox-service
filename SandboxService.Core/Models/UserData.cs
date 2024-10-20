@@ -7,4 +7,5 @@ public class UserData
     public string SecretKey { get; set; }
 
     public ICollection<Wallet> Wallets { get; set; } = [];
+    public ICollection<MarginPosition> MarginPositions { get; set; } = [];
 }

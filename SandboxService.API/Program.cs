@@ -1,5 +1,6 @@
 using FluentValidation;
 using SandboxService.API;
+using SandboxService.Application;
 using SandboxService.Application.Data.Dtos;
 using SandboxService.Application.Services;
 using SandboxService.Application.Services.Interfaces;
@@ -27,6 +28,7 @@ builder.Services.AddScoped<ICacheService, CacheService>();
 builder.Services.AddScoped<IBinanceService, BinanceService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<SpotTradeService>();
+builder.Services.AddScoped<MarginTradeService>();
 
 var app = builder.Build();
 
