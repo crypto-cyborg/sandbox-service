@@ -1,27 +1,18 @@
 using SandboxService.Application.Data.Dtos;
 using SandboxService.Application.Services.Interfaces;
 using SandboxService.Core.Exceptions;
-using SandboxService.Core.Interfaces;
 using SandboxService.Core.Models;
+using SandboxService.Persistence;
 
 namespace SandboxService.Application.Services;
 
-public class SpotTradeService
+public class SpotTradeService(IBinanceService binanceService, UnitOfWork unitOfWork)
 {
-    private readonly ICacheService _cacheService;
-    private readonly IBinanceService _binanceService;
-
-    public SpotTradeService(ICacheService cacheService, IBinanceService binanceService)
-    {
-        _cacheService = cacheService;
-        _binanceService = binanceService;
-    }
-
-    public async Task<UserData> Buy(SpotPurchaseRequest request)
+    public async Task<User> Buy(SpotPurchaseRequest request)
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
 
-        var user = _cacheService.Get(request.UserId);
+        var user = await unitOfWork.UserRepository.GetByIdAsync(request.UserId);
 
         var quoteWallet = user.Wallets.FirstOrDefault(w => w.Currency.Code == request.QuoteAsset);
         if (quoteWallet == null)
@@ -32,7 +23,7 @@ public class SpotTradeService
             );
         }
 
-        var price = (await _binanceService.GetPrice(request.Symbol)).Price;
+        var price = (await binanceService.GetPrice(request.Symbol)).Price;
         var totalPrice = Math.Round(price * request.Quantity, 8);
 
         if (quoteWallet.Balance < totalPrice)
@@ -55,7 +46,7 @@ public class SpotTradeService
             user.Wallets.Add(
                 new Wallet
                 {
-                    UserId = user.UserId,
+                    UserId = user.Id,
                     Currency = new Currency { Name = "SomeName", Code = request.BaseAsset },
                     Balance = request.Quantity,
                 }
@@ -66,7 +57,7 @@ public class SpotTradeService
         {
             Currency = new Currency { Name = "Tether", Code = request.QuoteAsset },
             Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
-            SenderId = user.UserId,
+            SenderId = user.Id,
             Amount = totalPrice,
         };
         quoteWallet.Transactions.Add(transaction);
@@ -74,11 +65,11 @@ public class SpotTradeService
         return user;
     }
 
-    public async Task<UserData> Sell(SpotSellRequest request)
+    public async Task<User> Sell(SpotSellRequest request)
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
 
-        var user = _cacheService.Get(request.UserId);
+        var user = await unitOfWork.UserRepository.GetByIdAsync(request.UserId);
 
         var baseWallet = user.Wallets.FirstOrDefault(w => w.Currency.Code == request.BaseAsset);
         if (baseWallet == null || baseWallet.Balance < request.Quantity)
@@ -89,7 +80,7 @@ public class SpotTradeService
             );
         }
 
-        var price = (await _binanceService.GetPrice(request.Symbol)).Price;
+        var price = (await binanceService.GetPrice(request.Symbol)).Price;
         var totalAmount = Math.Round(price * request.Quantity, 8);
 
         var quoteWallet = user.Wallets.FirstOrDefault(w => w.Currency.Code == request.QuoteAsset);
@@ -102,7 +93,7 @@ public class SpotTradeService
             user.Wallets.Add(
                 new Wallet
                 {
-                    UserId = user.UserId,
+                    UserId = user.Id,
                     Currency = new Currency { Name = "SomeName", Code = request.QuoteAsset },
                     Balance = totalAmount,
                 }
@@ -115,7 +106,7 @@ public class SpotTradeService
         {
             Currency = new Currency { Name = "SomeName", Code = request.BaseAsset },
             Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
-            SenderId = user.UserId,
+            SenderId = user.Id,
             Amount = -request.Quantity,
         };
         baseWallet.Transactions.Add(transaction);

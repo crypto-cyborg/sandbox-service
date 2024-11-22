@@ -1,11 +1,11 @@
 ﻿namespace SandboxService.Core.Models;
 
-public class UserData
+public class User
 {
-    public Guid UserId { get; set; }
+    public Guid Id { get; set; }
     public string ApiKey { get; set; }
     public string SecretKey { get; set; }
 
-    public ICollection<Wallet> Wallets { get; set; } = [];
-    public ICollection<MarginPosition> MarginPositions { get; set; } = [];
+    public virtual ICollection<Wallet> Wallets { get; set; } = [];
+    public virtual ICollection<MarginPosition> MarginPositions { get; set; } = [];
 }

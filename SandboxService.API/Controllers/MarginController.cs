@@ -7,18 +7,18 @@ namespace SandboxService.API;
 [Route("margin")]
 public class FuturesController : ControllerBase
 {
-    private readonly MarginTradeService _mts;
+    // private readonly MarginTradeService _mts;
 
-    public FuturesController(MarginTradeService mts)
-    {
-        _mts = mts;
-    }
+    // public FuturesController(MarginTradeService mts)
+    // {
+    //     _mts = mts;
+    // }
 
     [HttpPost]
     public async Task<IActionResult> OpenPosition(OpenMarginPositionRequest request)
     {
-        var res = await _mts.OpenPosition(request);
+        // var res = await _mts.OpenPosition(request);
 
-        return Ok(res);
+        return Ok();
     }
 }

@@ -4,7 +4,8 @@ public class MarginPosition
 {
     public Guid Id { get; set; } = Guid.NewGuid();
     public Guid UserId { get; set; }
-    public Currency Currency { get; set; }
+    public int CurrencyId { get; set; }
+    public virtual Currency Currency { get; set; }
     public decimal Amount { get; set; }
     public decimal EntryPrice { get; set; }
     public string Symbol { get; set; }

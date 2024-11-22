@@ -8,6 +8,6 @@ public class AccountProfile : Profile
 {
     public AccountProfile()
     {
-        CreateMap<SanboxInitializeRequest, UserData>();
+        CreateMap<SanboxInitializeRequest, User>();
     }
 }

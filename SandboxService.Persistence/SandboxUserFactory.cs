@@ -5,11 +5,11 @@ namespace SandboxService.Persistence;
 
 public static class SandboxUserFactory
 {
-    public static UserData Create(Guid userId, string apiKey, string secretKey)
+    public static User Create(Guid userId, string apiKey, string secretKey)
     {
-        var user = new UserData
+        var user = new User
         {
-            UserId = userId,
+            Id = userId,
             ApiKey = apiKey,
             SecretKey = secretKey,
         };
@@ -17,7 +17,7 @@ public static class SandboxUserFactory
         user.Wallets.Add(
             new Wallet
             {
-                UserId = user.UserId,
+                UserId = user.Id,
                 Currency = new Currency { Name = "Tether", Code = "USDT" },
                 Balance = 10000,
             }

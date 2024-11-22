@@ -17,14 +17,14 @@ public class SpotController : ControllerBase
     }
 
     [HttpPost("buy")]
-    public async Task<ActionResult<UserData>> Buy(SpotPurchaseRequest request)
+    public async Task<ActionResult<User>> Buy(SpotPurchaseRequest request)
     {
         var user = await _spotTradeService.Buy(request);
         return Ok(user);
     }
 
     [HttpPost("sell")]
-    public async Task<ActionResult<UserData>> Sell(SpotSellRequest request)
+    public async Task<ActionResult<User>> Sell(SpotSellRequest request)
     {
         var user = await _spotTradeService.Sell(request);
         return Ok(user);

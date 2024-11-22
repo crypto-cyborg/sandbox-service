@@ -1,13 +1,13 @@
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 using SandboxService.API;
 using SandboxService.Application;
 using SandboxService.Application.Data.Dtos;
 using SandboxService.Application.Services;
 using SandboxService.Application.Services.Interfaces;
 using SandboxService.Application.Validators;
-using SandboxService.Core.Interfaces;
-using SandboxService.Core.Models;
 using SandboxService.Persistence;
+using SandboxService.Persistence.Contexts;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,17 +18,19 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddScoped<GlobalExceptionsMiddleware>();
 
+builder.Services.AddDbContext<SandboxContext>(opts =>
+    opts.UseInMemoryDatabase("SandboxInMemo"));
+
+builder.Services.AddScoped<UnitOfWork>();
+
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 builder.Services.AddTransient<IValidator<SanboxInitializeRequest>, SandboxInitializeValidator>();
 
-builder.Services.AddSingleton<IMemoryCache, InMemoryCache>();
-builder.Services.AddScoped<ICacheService, CacheService>();
-
 builder.Services.AddScoped<IBinanceService, BinanceService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<SpotTradeService>();
-builder.Services.AddScoped<MarginTradeService>();
+// builder.Services.AddScoped<MarginTradeService>();
 
 var app = builder.Build();
 

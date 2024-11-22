@@ -10,5 +10,5 @@ public class SandboxContext(DbContextOptions<SandboxContext> options) : DbContex
     public DbSet<Order> Orders { get; set; }
     public DbSet<Transaction> Transactions { get; set; }
     public DbSet<Wallet> Wallets { get; set; }
-    public DbSet<UserData> Users { get; set; }
+    public DbSet<User> Users { get; set; }
 }

@@ -5,7 +5,6 @@ using Microsoft.Extensions.Configuration;
 using SandboxService.Application.Data.Dtos;
 using SandboxService.Application.Services.Interfaces;
 using SandboxService.Core.Exceptions;
-using SandboxService.Core.Interfaces;
 using SandboxService.Core.Models;
 using SandboxService.Persistence;
 
@@ -14,17 +13,15 @@ namespace SandboxService.Application.Services;
 public class AccountService : IAccountService
 {
     private readonly IMapper _mapper;
-    private readonly ICacheService _cacheService;
     private readonly IConfiguration _configuration;
 
-    public AccountService(IMapper mapper, ICacheService cacheService, IConfiguration configuration)
+    public AccountService(IMapper mapper, IConfiguration configuration)
     {
         _mapper = mapper;
-        _cacheService = cacheService;
         _configuration = configuration;
     }
 
-    public async Task<UserData> CreateSandboxUser(SanboxInitializeRequest request)
+    public async Task<User> CreateSandboxUser(SanboxInitializeRequest request)
     {
         // TODO: Validate userId
 
@@ -37,7 +34,7 @@ public class AccountService : IAccountService
 
         var userData = SandboxUserFactory.Create(request.UserId, request.ApiKey, request.SecretKey);
 
-        _cacheService.Set(userData.UserId, userData);
+        // _cacheService.Set(userData.UserId, userData);
 
         return userData;
     }
