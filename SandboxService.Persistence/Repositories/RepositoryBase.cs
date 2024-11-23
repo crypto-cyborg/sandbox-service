@@ -29,7 +29,7 @@ public class RepositoryBase<TEntity>(SandboxContext context) : IRepository<TEnti
             query = query.Where(filter);
         }
 
-        query = includeProperties.Split([','], StringSplitOptions.RemoveEmptyEntries)
+        query = includeProperties.Split(',', StringSplitOptions.RemoveEmptyEntries)
             .Aggregate(query, (current, includeProperty) => current.Include(includeProperty));
 
         return orderBy != null ? await orderBy(query).ToListAsync() : await query.ToListAsync();

@@ -1,7 +1,6 @@
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using SandboxService.API;
-using SandboxService.Application;
 using SandboxService.Application.Data.Dtos;
 using SandboxService.Application.Services;
 using SandboxService.Application.Services.Interfaces;
@@ -27,6 +26,8 @@ builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 builder.Services.AddTransient<IValidator<SanboxInitializeRequest>, SandboxInitializeValidator>();
 
+builder.Services.AddScoped<ICurrencyService, CurrencyService>();
+
 builder.Services.AddScoped<IBinanceService, BinanceService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<SpotTradeService>();
@@ -34,7 +35,7 @@ builder.Services.AddScoped<SpotTradeService>();
 
 var app = builder.Build();
 
-app.UseMiddleware<GlobalExceptionsMiddleware>();
+// app.UseMiddleware<GlobalExceptionsMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {

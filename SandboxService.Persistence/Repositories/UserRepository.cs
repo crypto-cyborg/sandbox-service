@@ -23,4 +23,13 @@ public class UserRepository(SandboxContext context) : RepositoryBase<User>(conte
 
         return orderBy is null ? await query.ToListAsync() : await orderBy(query).ToListAsync();
     }
+
+    public override Task<User?> GetByIdAsync(object id)
+    {
+        IQueryable<User> query = DbSet
+            .Include(u => u.Wallets)
+            .ThenInclude(w => w.Currency);
+
+        return query.FirstOrDefaultAsync(u => u.Id == new Guid(id.ToString()!));
+    }
 }

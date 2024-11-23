@@ -7,16 +7,17 @@ public class UnitOfWork(SandboxContext context) : IDisposable
 {
     private readonly SandboxContext _context = context;
 
-    private UserRepository _userRepository = null!;
-    public UserRepository UserRepository => _userRepository ??= new UserRepository(context);
+    private UserRepository? _userRepository;
+    public UserRepository UserRepository => _userRepository ??= new UserRepository(_context);
 
-    private CurrencyRepository _currencyRepository = null!;
-    public CurrencyRepository CurrencyRepository => _currencyRepository ??= new CurrencyRepository(context);
+    private CurrencyRepository? _currencyRepository;
+    public CurrencyRepository CurrencyRepository => _currencyRepository ??= new CurrencyRepository(_context);
 
-    public async Task<bool> SaveAsync() => await context.SaveChangesAsync() > 0; 
+    public async Task<bool> SaveAsync() => await _context.SaveChangesAsync() > 0; 
 
     public void Dispose()
     {
+        _context.Dispose();
         GC.SuppressFinalize(this);
     }
 }

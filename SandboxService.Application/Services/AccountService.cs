@@ -24,10 +24,11 @@ public class AccountService(IConfiguration configuration, UnitOfWork unitOfWork)
             throw new SandboxException("Keys are not valid", SandboxExceptionType.INVALID_KEYS);
         }
 
-        var userData = SandboxUserFactory.Create(request.UserId, request.ApiKey, request.SecretKey);
+        var userData = await CreateUser(request.UserId, request.ApiKey, request.SecretKey);
 
         await unitOfWork.UserRepository.InsertAsync(userData);
-        await unitOfWork.SaveAsync();
+        var rows = await unitOfWork.SaveAsync();
+        Console.WriteLine(rows);
 
         return userData;
     }
