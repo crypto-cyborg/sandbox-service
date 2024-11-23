@@ -18,7 +18,7 @@ public static class SandboxUserFactory
             new Wallet
             {
                 UserId = user.Id,
-                Currency = new Currency { Name = "Tether", Code = "USDT" },
+                Currency = new Currency { Name = "Tether", Ticker = "USDT" },
                 Balance = 10000,
             }
         );

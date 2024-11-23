@@ -1,6 +1,7 @@
 using SandboxService.Application.Data.Dtos;
 using SandboxService.Application.Services.Interfaces;
 using SandboxService.Core.Exceptions;
+using SandboxService.Core.Extensions;
 using SandboxService.Core.Models;
 using SandboxService.Persistence;
 
@@ -14,7 +15,7 @@ public class SpotTradeService(IBinanceService binanceService, UnitOfWork unitOfW
 
         var user = await unitOfWork.UserRepository.GetByIdAsync(request.UserId);
 
-        var quoteWallet = user.Wallets.FirstOrDefault(w => w.Currency.Code == request.QuoteAsset);
+        var quoteWallet = user.Wallets.FirstOrDefault(w => w.Currency.Ticker == request.QuoteAsset);
         if (quoteWallet == null)
         {
             throw new SandboxException(
@@ -36,8 +37,8 @@ public class SpotTradeService(IBinanceService binanceService, UnitOfWork unitOfW
 
         quoteWallet.Balance -= totalPrice;
 
-        var baseWallet = user.Wallets.FirstOrDefault(w => w.Currency.Code == request.BaseAsset);
-        if (baseWallet != null)
+        var baseWallet = user.Wallets.FirstOrDefault(w => w.Currency.Ticker == request.BaseAsset);
+        if (baseWallet is not null)
         {
             baseWallet.Balance += request.Quantity;
         }
@@ -47,15 +48,18 @@ public class SpotTradeService(IBinanceService binanceService, UnitOfWork unitOfW
                 new Wallet
                 {
                     UserId = user.Id,
-                    Currency = new Currency { Name = "SomeName", Code = request.BaseAsset },
+                    Currency = new Currency { Name = "SomeName", Ticker = request.BaseAsset },
                     Balance = request.Quantity,
                 }
             );
         }
 
+        var currency = await unitOfWork.CurrencyRepository.GetByTickerAsync(request.QuoteAsset) ??
+                       CurrencyExtensions.Create(request.QuoteAsset, request.QuoteAsset);
+
         var transaction = new Transaction
         {
-            Currency = new Currency { Name = "Tether", Code = request.QuoteAsset },
+            Currency = currency,
             Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
             SenderId = user.Id,
             Amount = totalPrice,
@@ -71,8 +75,8 @@ public class SpotTradeService(IBinanceService binanceService, UnitOfWork unitOfW
 
         var user = await unitOfWork.UserRepository.GetByIdAsync(request.UserId);
 
-        var baseWallet = user.Wallets.FirstOrDefault(w => w.Currency.Code == request.BaseAsset);
-        if (baseWallet == null || baseWallet.Balance < request.Quantity)
+        var baseWallet = user.Wallets.FirstOrDefault(w => w.Currency.Ticker == request.BaseAsset);
+        if (baseWallet is null || baseWallet.Balance < request.Quantity)
         {
             throw new SandboxException(
                 "Insufficient balance in base asset wallet",
@@ -83,7 +87,7 @@ public class SpotTradeService(IBinanceService binanceService, UnitOfWork unitOfW
         var price = (await binanceService.GetPrice(request.Symbol)).Price;
         var totalAmount = Math.Round(price * request.Quantity, 8);
 
-        var quoteWallet = user.Wallets.FirstOrDefault(w => w.Currency.Code == request.QuoteAsset);
+        var quoteWallet = user.Wallets.FirstOrDefault(w => w.Currency.Ticker == request.QuoteAsset);
         if (quoteWallet != null)
         {
             quoteWallet.Balance += totalAmount;
@@ -94,7 +98,7 @@ public class SpotTradeService(IBinanceService binanceService, UnitOfWork unitOfW
                 new Wallet
                 {
                     UserId = user.Id,
-                    Currency = new Currency { Name = "SomeName", Code = request.QuoteAsset },
+                    Currency = new Currency { Name = "SomeName", Ticker = request.QuoteAsset },
                     Balance = totalAmount,
                 }
             );
@@ -104,7 +108,7 @@ public class SpotTradeService(IBinanceService binanceService, UnitOfWork unitOfW
 
         var transaction = new Transaction
         {
-            Currency = new Currency { Name = "SomeName", Code = request.BaseAsset },
+            Currency = new Currency { Name = "SomeName", Ticker = request.BaseAsset },
             Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
             SenderId = user.Id,
             Amount = -request.Quantity,

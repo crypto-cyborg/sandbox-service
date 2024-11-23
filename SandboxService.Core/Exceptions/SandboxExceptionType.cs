@@ -7,5 +7,6 @@ public enum SandboxExceptionType
     INVALID_KEYS,
     INSUFFICIENT_FUNDS,
     INVALID_ASSET,
+    CURRENCY_NOT_FOUND,
     WALLET_DOES_NOT_EXIST,
 }

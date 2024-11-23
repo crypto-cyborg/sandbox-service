@@ -1,26 +1,18 @@
-﻿using System.Security.Cryptography;
+﻿using System.Diagnostics.Contracts;
+using System.Security.Cryptography;
 using System.Text;
-using AutoMapper;
 using Microsoft.Extensions.Configuration;
 using SandboxService.Application.Data.Dtos;
 using SandboxService.Application.Services.Interfaces;
 using SandboxService.Core.Exceptions;
+using SandboxService.Core.Extensions;
 using SandboxService.Core.Models;
 using SandboxService.Persistence;
 
 namespace SandboxService.Application.Services;
 
-public class AccountService : IAccountService
+public class AccountService(IConfiguration configuration, UnitOfWork unitOfWork) : IAccountService
 {
-    private readonly IMapper _mapper;
-    private readonly IConfiguration _configuration;
-
-    public AccountService(IMapper mapper, IConfiguration configuration)
-    {
-        _mapper = mapper;
-        _configuration = configuration;
-    }
-
     public async Task<User> CreateSandboxUser(SanboxInitializeRequest request)
     {
         // TODO: Validate userId
@@ -34,7 +26,8 @@ public class AccountService : IAccountService
 
         var userData = SandboxUserFactory.Create(request.UserId, request.ApiKey, request.SecretKey);
 
-        // _cacheService.Set(userData.UserId, userData);
+        await unitOfWork.UserRepository.InsertAsync(userData);
+        await unitOfWork.SaveAsync();
 
         return userData;
     }
@@ -44,7 +37,7 @@ public class AccountService : IAccountService
         try
         {
             var httpClient = new HttpClient();
-            var baseUrl = _configuration.GetSection("Binance:BaseUrl").Value;
+            var baseUrl = configuration.GetSection("Binance:BaseUrl").Value;
             var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             var query = $"timestamp={timestamp}";
             var signature = Sign(query, secretKey);
@@ -66,11 +59,42 @@ public class AccountService : IAccountService
         }
     }
 
-    private string Sign(string query, string secret)
+    [Pure]
+    private static string Sign(string query, string secret)
     {
         using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secret));
         var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(query));
 
         return BitConverter.ToString(hash).Replace("-", "").ToLower();
+    }
+    
+    private async Task<User> CreateUser(Guid userId, string apiKey, string secretKey)
+    {
+        var user = new User
+        {
+            Id = userId,
+            ApiKey = apiKey,
+            SecretKey = secretKey
+        };
+
+        var initialCurrency = await unitOfWork.CurrencyRepository.GetByTickerAsync("USDT");
+
+        if (initialCurrency is null)
+        {
+            await unitOfWork.CurrencyRepository.InsertAsync(new Currency { Name = "Tether", Ticker = "USDT" });
+            await unitOfWork.SaveAsync();
+            initialCurrency = await unitOfWork.CurrencyRepository.GetByTickerAsync("USDT");
+
+            if (initialCurrency is null)
+            {
+                throw new SandboxException("Failed to initialize default currency",
+                    SandboxExceptionType.CURRENCY_NOT_FOUND);
+            }
+        }
+
+        var wallet = WalletExtensions.Create(user.Id, initialCurrency.Id, 10000);
+        user.Wallets.Add(wallet);
+
+        return user;
     }
 }
