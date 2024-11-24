@@ -2,7 +2,7 @@
 
 public class Account
 {
-    public Guid Id { get; init; }
+    public Guid Id { get; init; } = Guid.NewGuid();
 
     public required Guid WalletId { get; init; }
     
