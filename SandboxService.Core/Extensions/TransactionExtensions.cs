@@ -6,23 +6,34 @@ public static class TransactionExtensions
 {
     public record TransactionReadDto(
         Guid Id,
+        int CurrencyId,
         CurrencyExtensions.CurrencyReadDto Currency,
-        long Timestamp,
+        DateTimeOffset Time,
         Guid SenderId,
+        Guid ReceiverId,
         decimal Amount);
 
-    public static Transaction Create(Guid senderId, decimal amount, Currency currency)
+    public static Transaction Create(Guid senderId, Guid receiverId, decimal amount, int currencyId)
     {
         return new Transaction
         {
-            Currency = currency,
-            Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+            CurrencyId = currencyId,
             SenderId = senderId,
+            ReceiverId = receiverId,
             Amount = amount,
         };
     }
 
     public static TransactionReadDto MapToResponse(this Transaction transaction)
-        => new(transaction.Id, transaction.Currency.MapToResponse(), transaction.Timestamp, transaction.SenderId,
+        => new(
+            transaction.Id,
+            transaction.CurrencyId,
+            transaction.Currency!.MapToResponse(),
+            transaction.Timestamp,
+            transaction.SenderId,
+            transaction.ReceiverId,
             transaction.Amount);
+
+    public static IEnumerable<TransactionReadDto> MapToResponse(this IEnumerable<Transaction> transactions)
+        => transactions.Select(t => t.MapToResponse());
 }
