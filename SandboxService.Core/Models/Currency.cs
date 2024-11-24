@@ -2,7 +2,7 @@
 
 public class Currency
 {
-    public int Id { get; set; }
-    public required string Name { get; set; }
-    public required string Ticker { get; set; }
+    public int Id { get; init; }
+    public required string Name { get; init; }
+    public required string Ticker { get; init; }
 }
