@@ -13,8 +13,8 @@ public class UserRepository(SandboxContext context) : RepositoryBase<User>(conte
         string includeProperties = "")
     {
         IQueryable<User> query = DbSet
-            .Include(u => u.Wallets)
-            .ThenInclude(w => w.Currency);
+            .Include(u => u.Wallet).ThenInclude(w => w.Accounts)
+            .Include(u => u.Wallet).ThenInclude(w => w.Transactions);
 
         if (filter is not null)
         {
@@ -27,8 +27,8 @@ public class UserRepository(SandboxContext context) : RepositoryBase<User>(conte
     public override Task<User?> GetByIdAsync(object id)
     {
         IQueryable<User> query = DbSet
-            .Include(u => u.Wallets)
-            .ThenInclude(w => w.Currency);
+            .Include(u => u.Wallet).ThenInclude(w => w.Accounts)
+            .Include(u => u.Wallet).ThenInclude(w => w.Transactions);
 
         return query.FirstOrDefaultAsync(u => u.Id == new Guid(id.ToString()!));
     }

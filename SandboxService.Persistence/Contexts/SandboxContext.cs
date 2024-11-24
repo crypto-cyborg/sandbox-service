@@ -16,33 +16,10 @@ public class SandboxContext(DbContextOptions<SandboxContext> options) : DbContex
     {
         modelBuilder.Entity<Currency>(currency =>
         {
-            currency.Property(c => c.Id).IsRequired().HasDefaultValue(Guid.NewGuid());
             currency.HasData([
-                new Currency { Name = "Tether", Ticker = "USDT" },
-                new Currency { Name = "Bitcoin", Ticker = "BTC" }
+                new Currency { Id = 1, Name = "Tether", Ticker = "USDT" },
+                new Currency { Id = 2, Name = "Bitcoin", Ticker = "BTC" }
             ]);
-        });
-
-        modelBuilder.Entity<Transaction>(transaction =>
-        {
-            transaction.Property(t => t.Id).IsRequired().HasDefaultValue(Guid.NewGuid());
-            transaction.Property(t => t.Timestamp).HasDefaultValue(DateTimeOffset.UtcNow);
-        });
-
-        modelBuilder.Entity<Account>(account =>
-        {
-            account.Property(a => a.Id).IsRequired().HasDefaultValue(Guid.NewGuid());
-            account.Property(a => a.Balance).IsRequired().HasDefaultValue(0);
-        });
-
-        modelBuilder.Entity<Wallet>(wallet =>
-        {
-            wallet.Property(w => w.Id).IsRequired().HasDefaultValue(Guid.NewGuid());
-        });
-
-        modelBuilder.Entity<User>(user =>
-        {
-            user.Property(u => u.Id).IsRequired().HasDefaultValue(Guid.NewGuid());
         });
     }
 }
