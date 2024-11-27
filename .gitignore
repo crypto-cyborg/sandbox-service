@@ -3,3 +3,6 @@ bin/
 obj/
 .vscode/
 .idea/
+
+appsettings.json
+appsettings.Development.json
