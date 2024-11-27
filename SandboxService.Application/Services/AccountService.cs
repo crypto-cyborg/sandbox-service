@@ -13,7 +13,7 @@ namespace SandboxService.Application.Services;
 
 public class AccountService(HttpClient httpClient, UnitOfWork unitOfWork) : IAccountService
 {
-    public async Task<User> CreateSandboxUser(SanboxInitializeRequest request)
+    public async Task<UserExtensions.UserReadDto> CreateSandboxUser(SanboxInitializeRequest request)
     {
         // TODO: Validate userId
 
@@ -29,7 +29,7 @@ public class AccountService(HttpClient httpClient, UnitOfWork unitOfWork) : IAcc
         await unitOfWork.UserRepository.InsertAsync(userData);
         await unitOfWork.SaveAsync();
 
-        return userData;
+        return userData.MapToResponse();
     }
 
     private async Task<bool> ValidateKeys(string apiKey, string secretKey)

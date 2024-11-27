@@ -21,7 +21,6 @@ public class SpotController : ControllerBase
     {
         var user = await _spotTradeService.Buy(request);
         return Ok(user);
-        return Ok();
     }
 
     [HttpPost("sell")]

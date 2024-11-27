@@ -18,7 +18,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<GlobalExceptionsMiddleware>();
 
 builder.Services.AddDbContext<SandboxContext>(opts =>
-    opts.UseSqlServer(builder.Configuration.GetConnectionString("Local")));
+    opts.UseSqlServer(builder.Configuration.GetConnectionString("ccdb-sandbox")));
 
 builder.Services.AddScoped<UnitOfWork>();
 

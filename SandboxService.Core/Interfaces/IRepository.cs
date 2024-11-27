@@ -9,7 +9,7 @@ public interface IRepository<TEntity>
         Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null,
         string includeProperties = "");
 
-    Task<TEntity?> GetByIdAsync(object id);
+    Task<TEntity?> GetByIdAsync(object id, string includeProperties = "");
     Task InsertAsync(TEntity entity);
     void Delete(object id);
     void Delete(TEntity entityToDelete);

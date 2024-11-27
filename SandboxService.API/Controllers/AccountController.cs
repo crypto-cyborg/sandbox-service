@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using SandboxService.Core.Extensions;
 using SandboxService.Persistence;
 
 namespace SandboxService.API.Controllers;
@@ -17,6 +18,6 @@ public class AccountController(UnitOfWork unitOfWork) : ControllerBase
             return NotFound("Required user does not exist");
         }
 
-        return Ok(user.Wallet);
+        return Ok(user.Wallet.MapToResponse());
     }
 }

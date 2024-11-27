@@ -1,3 +1,4 @@
+using LanguageExt.Common;
 using SandboxService.Application.Data.Dtos;
 using SandboxService.Application.Services.Interfaces;
 using SandboxService.Core.Exceptions;
@@ -9,27 +10,24 @@ namespace SandboxService.Application.Services;
 
 public class SpotTradeService(IBinanceService binanceService, UnitOfWork unitOfWork)
 {
-    public async Task<User> Buy(SpotPurchaseRequest request)
+    public async Task<UserExtensions.UserReadDto> Buy(SpotPurchaseRequest request)
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
 
-        // Начинаем транзакцию
         await using var transaction = await unitOfWork.BeginTransactionAsync();
-        // Получаем пользователя
+
         var user = await unitOfWork.UserRepository.GetByIdAsync(request.UserId);
         if (user is null)
         {
             throw new SandboxException("User not found", SandboxExceptionType.RECORD_NOT_FOUND);
         }
 
-        // Проверяем наличие кошелька с quote asset
         var quoteAccount = user.Wallet.Accounts.FirstOrDefault(w => w.Currency.Ticker == request.QuoteAsset);
         if (quoteAccount is null)
         {
             throw new SandboxException("Quote asset wallet not found", SandboxExceptionType.WALLET_DOES_NOT_EXIST);
         }
 
-        // Получаем цену символа
         var priceResponse = await binanceService.GetPrice(request.Symbol);
         if (priceResponse is not { Price: > 0 })
         {
@@ -37,18 +35,15 @@ public class SpotTradeService(IBinanceService binanceService, UnitOfWork unitOfW
         }
 
         var price = priceResponse.Price;
-        var totalPrice = Math.Round(price * request.Quantity, 8);
+        var totalPrice = price * request.Quantity;
 
-        // Проверяем баланс
         if (quoteAccount.Balance < totalPrice)
         {
             throw new SandboxException("Insufficient funds", SandboxExceptionType.INSUFFICIENT_FUNDS);
         }
 
-        // Обновляем баланс quote asset
         quoteAccount.Balance -= totalPrice;
 
-        // Проверяем наличие base asset
         var baseAccount = user.Wallet.Accounts.FirstOrDefault(w => w.Currency.Ticker == request.BaseAsset);
         if (baseAccount is null)
         {
@@ -59,14 +54,14 @@ public class SpotTradeService(IBinanceService binanceService, UnitOfWork unitOfW
             }
 
             baseAccount = AccountExtensions.Create(user.Id, baseCurrency.Id, 0);
+
+            await unitOfWork.AccountRepository.InsertAsync(baseAccount);
+            
             user.Wallet.Accounts.Add(baseAccount);
-            unitOfWork.UserRepository.Update(user);
         }
 
-        // Обновляем баланс base asset
         baseAccount.Balance += request.Quantity;
 
-        // Логируем транзакции
         var quoteCurrency = await unitOfWork.CurrencyRepository.GetByTickerAsync(request.QuoteAsset);
         if (quoteCurrency is null)
         {
@@ -74,25 +69,26 @@ public class SpotTradeService(IBinanceService binanceService, UnitOfWork unitOfW
         }
 
         var quoteTransaction =
-            TransactionExtensions.Create(quoteAccount.Id, baseAccount.Id, totalPrice, quoteCurrency.Id);
-        var baseTransaction = TransactionExtensions.Create(baseAccount.Id, quoteAccount.Id, request.Quantity,
+            TransactionExtensions.Create(quoteAccount.Id, baseAccount.Id, user.Wallet.Id, totalPrice, quoteCurrency.Id);
+        var baseTransaction = TransactionExtensions.Create(baseAccount.Id, quoteAccount.Id, user.Wallet.Id,
+            request.Quantity,
             baseAccount.CurrencyId);
+
+        await unitOfWork.TransactionRepository.InsertAsync(quoteTransaction);
+        await unitOfWork.TransactionRepository.InsertAsync(baseTransaction);
 
         user.Wallet.Transactions.Add(quoteTransaction);
         user.Wallet.Transactions.Add(baseTransaction);
 
         unitOfWork.UserRepository.Update(user);
-        
-        // Сохраняем изменения
+
         await unitOfWork.SaveAsync();
 
-        // Завершаем транзакцию
         await transaction.CommitAsync();
 
-        return user;
+        return user.MapToResponse();
     }
-
-
+    
     // public async Task<User> Sell(SpotSellRequest request)
     // {
     //     ArgumentNullException.ThrowIfNull(request, nameof(request));

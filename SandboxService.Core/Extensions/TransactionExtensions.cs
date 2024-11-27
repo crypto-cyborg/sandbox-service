@@ -6,6 +6,7 @@ public static class TransactionExtensions
 {
     public record TransactionReadDto(
         Guid Id,
+        Guid WalletId,
         int CurrencyId,
         CurrencyExtensions.CurrencyReadDto Currency,
         DateTimeOffset Time,
@@ -13,7 +14,7 @@ public static class TransactionExtensions
         Guid ReceiverId,
         decimal Amount);
 
-    public static Transaction Create(Guid senderId, Guid receiverId, decimal amount, int currencyId)
+    public static Transaction Create(Guid senderId, Guid receiverId, Guid walletId, decimal amount, int currencyId)
     {
         return new Transaction
         {
@@ -27,6 +28,7 @@ public static class TransactionExtensions
     public static TransactionReadDto MapToResponse(this Transaction transaction)
         => new(
             transaction.Id,
+            transaction.WalletId,
             transaction.CurrencyId,
             transaction.Currency!.MapToResponse(),
             transaction.Timestamp,

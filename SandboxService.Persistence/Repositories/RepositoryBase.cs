@@ -35,10 +35,15 @@ public class RepositoryBase<TEntity>(SandboxContext context) : IRepository<TEnti
         return orderBy != null ? await orderBy(query).ToListAsync() : await query.ToListAsync();
     }
 
-    public virtual async Task<TEntity?> GetByIdAsync(object id)
+    public virtual async Task<TEntity?> GetByIdAsync(object id, string includeProperties = "")
     {
-        return await DbSet.FindAsync(id);
+        IQueryable<TEntity> query = DbSet;
+        query = includeProperties.Split(',', StringSplitOptions.RemoveEmptyEntries)
+            .Aggregate(query, (current, includeProperty) => current.Include(includeProperty));
+
+        return await query.FirstOrDefaultAsync(e => EF.Property<object>(e, "Id") == id);
     }
+
 
     public virtual async Task InsertAsync(TEntity entity)
     {
@@ -63,7 +68,11 @@ public class RepositoryBase<TEntity>(SandboxContext context) : IRepository<TEnti
 
     public virtual void Update(TEntity entityToUpdate)
     {
-        DbSet.Attach(entityToUpdate);
+        if (Context.Entry(entityToUpdate).State == EntityState.Detached)
+        {
+            DbSet.Attach(entityToUpdate);
+        }
+
         Context.Entry(entityToUpdate).State = EntityState.Modified;
     }
 }
