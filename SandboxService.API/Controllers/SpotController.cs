@@ -24,10 +24,9 @@ public class SpotController : ControllerBase
     }
 
     [HttpPost("sell")]
-    public async Task<ActionResult<User>> Sell(SpotSellRequest request)
+    public async Task<ActionResult<User>> Sell(SpotSaleRequest request)
     {
-        // var user = await _spotTradeService.Sell(request);
-        // return Ok(user);
-        return Ok();
+        var user = await _spotTradeService.Sell(request);
+        return Ok(user);
     }
 }

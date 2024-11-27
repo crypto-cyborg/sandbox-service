@@ -1,6 +1,6 @@
 namespace SandboxService.Application.Data.Dtos;
 
-public record class SpotSellRequest
+public record class SpotSaleRequest
 {
     public Guid UserId { get; set; }
     public string Symbol { get; set; }
