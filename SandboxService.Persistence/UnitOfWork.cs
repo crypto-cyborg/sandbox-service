@@ -1,9 +1,10 @@
-﻿using SandboxService.Persistence.Contexts;
+﻿using Microsoft.EntityFrameworkCore.Storage;
+using SandboxService.Persistence.Contexts;
 using SandboxService.Persistence.Repositories;
 
 namespace SandboxService.Persistence;
 
-public class UnitOfWork(SandboxContext context) : IDisposable
+public class UnitOfWork(SandboxContext context)
 {
     private readonly SandboxContext _context = context;
 
@@ -29,11 +30,10 @@ public class UnitOfWork(SandboxContext context) : IDisposable
         _transactionRepository ??= new TransactionRepository(_context);
 
 
-    public async Task<bool> SaveAsync() => await _context.SaveChangesAsync() > 0;
-
-    public void Dispose()
+    public async Task SaveAsync() => await _context.SaveChangesAsync();
+    
+    public async Task<IDbContextTransaction> BeginTransactionAsync()
     {
-        _context.Dispose();
-        GC.SuppressFinalize(this);
+        return await _context.Database.BeginTransactionAsync();
     }
 }

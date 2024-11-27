@@ -13,118 +13,132 @@ public class SpotTradeService(IBinanceService binanceService, UnitOfWork unitOfW
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
 
-        if (unitOfWork == null || binanceService == null)
-        {
-            throw new InvalidOperationException("Dependencies are not properly initialized.");
-        }
-
+        // Начинаем транзакцию
+        await using var transaction = await unitOfWork.BeginTransactionAsync();
+        // Получаем пользователя
         var user = await unitOfWork.UserRepository.GetByIdAsync(request.UserId);
-        if (user == null)
+        if (user is null)
         {
             throw new SandboxException("User not found", SandboxExceptionType.RECORD_NOT_FOUND);
         }
 
-        var quoteWallet = user.Wallets.FirstOrDefault(w => w.Currency.Ticker == request.QuoteAsset);
-        if (quoteWallet == null)
+        // Проверяем наличие кошелька с quote asset
+        var quoteAccount = user.Wallet.Accounts.FirstOrDefault(w => w.Currency.Ticker == request.QuoteAsset);
+        if (quoteAccount is null)
         {
             throw new SandboxException("Quote asset wallet not found", SandboxExceptionType.WALLET_DOES_NOT_EXIST);
         }
 
+        // Получаем цену символа
         var priceResponse = await binanceService.GetPrice(request.Symbol);
         if (priceResponse is not { Price: > 0 })
         {
-            throw new SandboxException("Invalid symbol price", SandboxExceptionType.WALLET_DOES_NOT_EXIST);
+            throw new SandboxException("Invalid symbol price", SandboxExceptionType.INVALID_ASSET);
         }
 
         var price = priceResponse.Price;
         var totalPrice = Math.Round(price * request.Quantity, 8);
 
-        if (quoteWallet.Balance < totalPrice)
+        // Проверяем баланс
+        if (quoteAccount.Balance < totalPrice)
         {
             throw new SandboxException("Insufficient funds", SandboxExceptionType.INSUFFICIENT_FUNDS);
         }
 
-        quoteWallet.Balance -= totalPrice;
+        // Обновляем баланс quote asset
+        quoteAccount.Balance -= totalPrice;
 
-        var baseWallet = user.Wallets.FirstOrDefault(w => w.Currency.Ticker == request.BaseAsset);
-        if (baseWallet != null)
-        {
-            baseWallet.Balance += request.Quantity;
-        }
-        else
+        // Проверяем наличие base asset
+        var baseAccount = user.Wallet.Accounts.FirstOrDefault(w => w.Currency.Ticker == request.BaseAsset);
+        if (baseAccount is null)
         {
             var baseCurrency = await unitOfWork.CurrencyRepository.GetByTickerAsync(request.BaseAsset);
-            if (baseCurrency == null)
+            if (baseCurrency is null)
             {
                 throw new SandboxException("Base currency not found", SandboxExceptionType.INVALID_ASSET);
             }
 
-            user.Wallets.Add(WalletExtensions.Create(user.Id, baseCurrency.Id, request.Quantity));
+            baseAccount = AccountExtensions.Create(user.Id, baseCurrency.Id, 0);
+            user.Wallet.Accounts.Add(baseAccount);
+            unitOfWork.UserRepository.Update(user);
         }
 
-        var quoteCurrency = await unitOfWork.CurrencyRepository.GetByTickerAsync(request.QuoteAsset)
-                            ?? CurrencyExtensions.Create(request.QuoteAsset, request.QuoteAsset);
+        // Обновляем баланс base asset
+        baseAccount.Balance += request.Quantity;
 
-        quoteWallet.Transactions.Add(TransactionExtensions.Create(user.Id, totalPrice, quoteCurrency));
-
-        if (baseWallet != null)
+        // Логируем транзакции
+        var quoteCurrency = await unitOfWork.CurrencyRepository.GetByTickerAsync(request.QuoteAsset);
+        if (quoteCurrency is null)
         {
-            var baseCurrency = await unitOfWork.CurrencyRepository.GetByTickerAsync(request.BaseAsset);
-            baseWallet.Transactions.Add(TransactionExtensions.Create(user.Id, request.Quantity, baseCurrency));
+            throw new SandboxException("Quote currency not found", SandboxExceptionType.INVALID_ASSET);
         }
 
+        var quoteTransaction =
+            TransactionExtensions.Create(quoteAccount.Id, baseAccount.Id, totalPrice, quoteCurrency.Id);
+        var baseTransaction = TransactionExtensions.Create(baseAccount.Id, quoteAccount.Id, request.Quantity,
+            baseAccount.CurrencyId);
+
+        user.Wallet.Transactions.Add(quoteTransaction);
+        user.Wallet.Transactions.Add(baseTransaction);
+
+        unitOfWork.UserRepository.Update(user);
+        
+        // Сохраняем изменения
         await unitOfWork.SaveAsync();
 
-        return user;
-    }
-
-
-    public async Task<User> Sell(SpotSellRequest request)
-    {
-        ArgumentNullException.ThrowIfNull(request, nameof(request));
-
-        var user = await unitOfWork.UserRepository.GetByIdAsync(request.UserId);
-
-        var baseWallet = user.Wallets.FirstOrDefault(w => w.Currency.Ticker == request.BaseAsset);
-        if (baseWallet is null || baseWallet.Balance < request.Quantity)
-        {
-            throw new SandboxException(
-                "Insufficient balance in base asset wallet",
-                SandboxExceptionType.INSUFFICIENT_FUNDS
-            );
-        }
-
-        var price = (await binanceService.GetPrice(request.Symbol)).Price;
-        var totalAmount = Math.Round(price * request.Quantity, 8);
-
-        var quoteWallet = user.Wallets.FirstOrDefault(w => w.Currency.Ticker == request.QuoteAsset);
-        if (quoteWallet != null)
-        {
-            quoteWallet.Balance += totalAmount;
-        }
-        else
-        {
-            user.Wallets.Add(
-                new Wallet
-                {
-                    UserId = user.Id,
-                    Currency = new Currency { Name = "SomeName", Ticker = request.QuoteAsset },
-                    Balance = totalAmount,
-                }
-            );
-        }
-
-        baseWallet.Balance -= request.Quantity;
-
-        var transaction = new Transaction
-        {
-            Currency = new Currency { Name = "SomeName", Ticker = request.BaseAsset },
-            Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
-            SenderId = user.Id,
-            Amount = -request.Quantity,
-        };
-        baseWallet.Transactions.Add(transaction);
+        // Завершаем транзакцию
+        await transaction.CommitAsync();
 
         return user;
     }
+
+
+    // public async Task<User> Sell(SpotSellRequest request)
+    // {
+    //     ArgumentNullException.ThrowIfNull(request, nameof(request));
+    //
+    //     var user = await unitOfWork.UserRepository.GetByIdAsync(request.UserId);
+    //
+    //     var baseWallet = user.Wallets.FirstOrDefault(w => w.Currency.Ticker == request.BaseAsset);
+    //     if (baseWallet is null || baseWallet.Balance < request.Quantity)
+    //     {
+    //         throw new SandboxException(
+    //             "Insufficient balance in base asset wallet",
+    //             SandboxExceptionType.INSUFFICIENT_FUNDS
+    //         );
+    //     }
+    //
+    //     var price = (await binanceService.GetPrice(request.Symbol)).Price;
+    //     var totalAmount = Math.Round(price * request.Quantity, 8);
+    //
+    //     var quoteWallet = user.Wallets.FirstOrDefault(w => w.Currency.Ticker == request.QuoteAsset);
+    //     if (quoteWallet != null)
+    //     {
+    //         quoteWallet.Balance += totalAmount;
+    //     }
+    //     else
+    //     {
+    //         user.Wallets.Add(
+    //             new Account
+    //             {
+    //                 UserId = user.Id,
+    //                 Currency = new Currency { Name = "SomeName", Ticker = request.QuoteAsset },
+    //                 Balance = totalAmount,
+    //             }
+    //         );
+    //     }
+    //
+    //     baseWallet.Balance -= request.Quantity;
+    //
+    //     var transaction = new Transaction
+    //     {
+    //         Currency = new Currency { Name = "SomeName", Ticker = request.BaseAsset },
+    //         Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+    //         SenderId = user.Id,
+    //         Amount = -request.Quantity,
+    //     };
+    //     baseWallet.Transactions.Add(transaction);
+    //
+    //     return user;
+    // }
 }

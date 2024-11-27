@@ -8,7 +8,7 @@ namespace SandboxService.API.Controllers;
 public class AccountController(UnitOfWork unitOfWork) : ControllerBase
 {
     [HttpGet("{userId:guid}")]
-    public async Task<IActionResult> GetAllWallets(Guid userId)
+    public async Task<IActionResult> GetWallet(Guid userId)
     {
         var user = await unitOfWork.UserRepository.GetByIdAsync(userId);
 
@@ -17,6 +17,6 @@ public class AccountController(UnitOfWork unitOfWork) : ControllerBase
             return NotFound("Required user does not exist");
         }
 
-        return Ok(user.Wallets);
+        return Ok(user.Wallet);
     }
 }

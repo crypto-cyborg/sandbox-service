@@ -9,4 +9,6 @@ public enum SandboxExceptionType
     INVALID_ASSET,
     CURRENCY_NOT_FOUND,
     WALLET_DOES_NOT_EXIST,
+    INVALID_PRICE,
+    CONCURRENCY_CONFLICT,
 }

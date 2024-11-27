@@ -11,7 +11,7 @@ using SandboxService.Persistence;
 
 namespace SandboxService.Application.Services;
 
-public class AccountService(IConfiguration configuration, UnitOfWork unitOfWork) : IAccountService
+public class AccountService(HttpClient httpClient, UnitOfWork unitOfWork) : IAccountService
 {
     public async Task<User> CreateSandboxUser(SanboxInitializeRequest request)
     {
@@ -27,8 +27,7 @@ public class AccountService(IConfiguration configuration, UnitOfWork unitOfWork)
         var userData = await CreateUser(request.UserId, request.ApiKey, request.SecretKey);
 
         await unitOfWork.UserRepository.InsertAsync(userData);
-        var rows = await unitOfWork.SaveAsync();
-        Console.WriteLine(rows);
+        await unitOfWork.SaveAsync();
 
         return userData;
     }
@@ -37,15 +36,13 @@ public class AccountService(IConfiguration configuration, UnitOfWork unitOfWork)
     {
         try
         {
-            var httpClient = new HttpClient();
-            var baseUrl = configuration.GetSection("Binance:BaseUrl").Value;
             var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             var query = $"timestamp={timestamp}";
             var signature = Sign(query, secretKey);
 
             var request = new HttpRequestMessage(
                 HttpMethod.Get,
-                $"{baseUrl}account?{query}&signature={signature}"
+                $"account?{query}&signature={signature}"
             );
 
             request.Headers.Add("X-MBX-APIKEY", apiKey);
@@ -68,16 +65,9 @@ public class AccountService(IConfiguration configuration, UnitOfWork unitOfWork)
 
         return BitConverter.ToString(hash).Replace("-", "").ToLower();
     }
-    
+
     private async Task<User> CreateUser(Guid userId, string apiKey, string secretKey)
     {
-        var user = new User
-        {
-            Id = userId,
-            ApiKey = apiKey,
-            SecretKey = secretKey
-        };
-
         var initialCurrency = await unitOfWork.CurrencyRepository.GetByTickerAsync("USDT");
 
         if (initialCurrency is null)
@@ -93,8 +83,20 @@ public class AccountService(IConfiguration configuration, UnitOfWork unitOfWork)
             }
         }
 
-        var wallet = WalletExtensions.Create(user.Id, initialCurrency.Id, 10000);
-        user.Wallets.Add(wallet);
+        var wallet = WalletExtensions.Create(userId);
+        var initialAccount = AccountExtensions.Create(wallet.Id, initialCurrency.Id, 10000);
+        wallet.Accounts.Add(initialAccount);
+
+        var user = new User
+        {
+            Id = userId,
+            ApiKey = apiKey,
+            SecretKey = secretKey,
+            WalletId = wallet.Id,
+            Wallet = wallet
+        };
+
+        await unitOfWork.SaveAsync();
 
         return user;
     }

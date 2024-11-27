@@ -18,7 +18,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<GlobalExceptionsMiddleware>();
 
 builder.Services.AddDbContext<SandboxContext>(opts =>
-    opts.UseInMemoryDatabase("SandboxInMemo"));
+    opts.UseSqlServer(builder.Configuration.GetConnectionString("Local")));
 
 builder.Services.AddScoped<UnitOfWork>();
 
@@ -29,7 +29,13 @@ builder.Services.AddTransient<IValidator<SanboxInitializeRequest>, SandboxInitia
 builder.Services.AddScoped<ICurrencyService, CurrencyService>();
 
 builder.Services.AddScoped<IBinanceService, BinanceService>();
+builder.Services.AddHttpClient<IBinanceService, BinanceService>(client =>
+    client.BaseAddress = new Uri(builder.Configuration["Binance:BaseUrl"]!));
+
 builder.Services.AddScoped<IAccountService, AccountService>();
+builder.Services.AddHttpClient<IAccountService, AccountService>(client =>
+    client.BaseAddress = new Uri(builder.Configuration["Binance:BaseUrl"]!));
+
 builder.Services.AddScoped<SpotTradeService>();
 // builder.Services.AddScoped<MarginTradeService>();
 

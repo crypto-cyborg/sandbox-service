@@ -8,38 +8,23 @@ namespace SandboxService.API.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class SandboxController : ControllerBase
+public class SandboxController(IAccountService accountService) : ControllerBase
 {
-    private readonly IAccountService _accountService;
-
-    public SandboxController(IAccountService accountService)
-    {
-        _accountService = accountService;
-    }
-
-    [HttpPost]
+    [HttpPost("initialize")]
     public async Task<IActionResult> Initialize(
         SanboxInitializeRequest request,
         IValidator<SanboxInitializeRequest> validator
     )
     {
-        var validation = validator.Validate(request);
+        var validation = await validator.ValidateAsync(request);
 
         if (!validation.IsValid)
         {
             return BadRequest(validation.Errors);
         }
 
-        var response = await _accountService.CreateSandboxUser(request);
+        var response = await accountService.CreateSandboxUser(request);
 
         return Ok(response);
-    }
-
-    [HttpGet]
-    public async Task<IActionResult> GetPrice(string symbol, BinanceService binanceService)
-    {
-        var price = await binanceService.GetPrice(symbol);
-
-        return Ok(price);
     }
 }

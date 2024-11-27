@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SandboxService.Persistence.Contexts;
 
@@ -11,9 +12,11 @@ using SandboxService.Persistence.Contexts;
 namespace SandboxService.Persistence.Migrations
 {
     [DbContext(typeof(SandboxContext))]
-    partial class SandboxContextModelSnapshot : ModelSnapshot
+    [Migration("20241126072923_UserRowVersion")]
+    partial class UserRowVersion
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -29,8 +32,7 @@ namespace SandboxService.Persistence.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("Balance")
-                        .HasPrecision(18, 4)
-                        .HasColumnType("decimal(18,4)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("CurrencyId")
                         .HasColumnType("int");
@@ -89,8 +91,7 @@ namespace SandboxService.Persistence.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("Amount")
-                        .HasPrecision(18, 4)
-                        .HasColumnType("decimal(18,4)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("CurrencyId")
                         .HasColumnType("int");
@@ -139,10 +140,12 @@ namespace SandboxService.Persistence.Migrations
                     b.Property<Guid>("WalletId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid>("WalletId1")
+                        .HasColumnType("uniqueidentifier");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("WalletId")
-                        .IsUnique();
+                    b.HasIndex("WalletId1");
 
                     b.ToTable("Users");
                 });
@@ -169,15 +172,13 @@ namespace SandboxService.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("SandboxService.Core.Models.Wallet", "Wallet")
+                    b.HasOne("SandboxService.Core.Models.Wallet", null)
                         .WithMany("Accounts")
                         .HasForeignKey("WalletId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Currency");
-
-                    b.Navigation("Wallet");
                 });
 
             modelBuilder.Entity("SandboxService.Core.Models.Transaction", b =>
@@ -198,8 +199,8 @@ namespace SandboxService.Persistence.Migrations
             modelBuilder.Entity("SandboxService.Core.Models.User", b =>
                 {
                     b.HasOne("SandboxService.Core.Models.Wallet", "Wallet")
-                        .WithOne("User")
-                        .HasForeignKey("SandboxService.Core.Models.User", "WalletId")
+                        .WithMany()
+                        .HasForeignKey("WalletId1")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -211,9 +212,6 @@ namespace SandboxService.Persistence.Migrations
                     b.Navigation("Accounts");
 
                     b.Navigation("Transactions");
-
-                    b.Navigation("User")
-                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

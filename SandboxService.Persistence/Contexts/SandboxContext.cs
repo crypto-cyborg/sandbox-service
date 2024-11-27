@@ -6,11 +6,11 @@ namespace SandboxService.Persistence.Contexts;
 
 public class SandboxContext(DbContextOptions<SandboxContext> options) : DbContext(options)
 {
-    public DbSet<Currency> Currencies { get; init; }
-    public DbSet<Transaction> Transactions { get; init; }
-    public DbSet<Account> Accounts { get; init; }
-    public DbSet<Wallet> Wallets { get; init; }
-    public DbSet<User> Users { get; init; }
+    public DbSet<Currency> Currencies { get; set; }
+    public DbSet<Transaction> Transactions { get; set; }
+    public DbSet<Account> Accounts { get; set; }
+    public DbSet<Wallet> Wallets { get; set; }
+    public DbSet<User> Users { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -21,5 +21,23 @@ public class SandboxContext(DbContextOptions<SandboxContext> options) : DbContex
                 new Currency { Id = 2, Name = "Bitcoin", Ticker = "BTC" }
             ]);
         });
+
+        modelBuilder.Entity<User>()
+            .Property(u => u.RowVersion)
+            .IsRowVersion();
+        
+        modelBuilder.Entity<User>()
+            .HasOne(u => u.Wallet)
+            .WithOne(w => w.User)
+            .HasForeignKey<User>(u => u.WalletId);
+        
+        modelBuilder.Entity<Account>()
+            .Property(a => a.Balance)
+            .HasPrecision(18, 4);
+
+        modelBuilder.Entity<Transaction>()
+            .Property(t => t.Amount)
+            .HasPrecision(18, 4);
+
     }
 }
