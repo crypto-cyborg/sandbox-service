@@ -2,6 +2,7 @@ using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using SandboxService.API;
 using SandboxService.Application.Data.Dtos;
+using SandboxService.Application.ServiceClients;
 using SandboxService.Application.Services;
 using SandboxService.Application.Services.Interfaces;
 using SandboxService.Application.Validators;
@@ -25,6 +26,10 @@ builder.Services.AddScoped<UnitOfWork>();
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 builder.Services.AddTransient<IValidator<SanboxInitializeRequest>, SandboxInitializeValidator>();
+
+builder.Services.AddScoped<UserServiceClient>();
+builder.Services.AddHttpClient<UserServiceClient>(client => 
+    client.BaseAddress = new Uri(builder.Configuration["InternalServices:UserService"]!));
 
 builder.Services.AddScoped<ICurrencyService, CurrencyService>();
 
