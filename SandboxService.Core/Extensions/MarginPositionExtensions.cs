@@ -20,4 +20,7 @@ public static class MarginPositionExtensions
     public static MarginPositionRead MapToResponse(this MarginPosition mp)
         => new(mp.Id, mp.UserId, mp.Currency.MapToResponse(), mp.Symbol, mp.Amount, mp.EntryPrice, mp.Leverage,
             mp.IsLong, mp.IsClosed, mp.OpenDate, mp.CloseDate);
+
+    public static IEnumerable<MarginPositionRead> MapToResponse(this IEnumerable<MarginPosition> positions)
+        => positions.Select(p => p.MapToResponse());
 }

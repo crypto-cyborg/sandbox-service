@@ -8,6 +8,7 @@ using SandboxService.Application.Services.Interfaces;
 using SandboxService.Application.Validators;
 using SandboxService.Persistence;
 using SandboxService.Persistence.Contexts;
+using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,6 +32,8 @@ builder.Services.AddDbContext<SandboxContext>(opts =>
     opts.UseSqlServer(builder.Configuration.GetConnectionString("ccdb-sandbox")));
 
 builder.Services.AddScoped<UnitOfWork>();
+
+//builder.Services.AddMediatR(Assembly.GetExecutingAssembly());
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
