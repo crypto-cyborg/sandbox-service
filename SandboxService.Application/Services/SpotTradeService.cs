@@ -19,7 +19,7 @@ public class SpotTradeService(IBinanceService binanceService, UnitOfWork unitOfW
         var user = await unitOfWork.UserRepository.GetByIdAsync(request.UserId);
         if (user is null)
         {
-            throw new SandboxException("User not found", SandboxExceptionType.RECORD_NOT_FOUND);
+            throw new SandboxException("User not found", SandboxExceptionType.ENTITY_NOT_FOUND);
         }
 
         var quoteAccount = user.Wallet.Accounts.FirstOrDefault(w => w.Currency.Ticker == request.QuoteAsset);
@@ -98,7 +98,7 @@ public class SpotTradeService(IBinanceService binanceService, UnitOfWork unitOfW
         var user = await unitOfWork.UserRepository.GetByIdAsync(request.UserId);
         if (user is null)
         {
-            throw new SandboxException("User not found", SandboxExceptionType.RECORD_NOT_FOUND);
+            throw new SandboxException("User not found", SandboxExceptionType.ENTITY_NOT_FOUND);
         }
 
         var baseAccount = user.Wallet.Accounts.FirstOrDefault(w => w.Currency.Ticker == request.BaseAsset);

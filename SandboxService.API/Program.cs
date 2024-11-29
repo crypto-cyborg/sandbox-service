@@ -8,6 +8,7 @@ using SandboxService.Application.Services.Interfaces;
 using SandboxService.Application.Validators;
 using SandboxService.Persistence;
 using SandboxService.Persistence.Contexts;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,7 +20,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<GlobalExceptionsMiddleware>();
 
 builder.Services.AddDbContext<SandboxContext>(opts =>
-    opts.UseSqlServer(builder.Configuration.GetConnectionString("ccdb-sandbox")));
+    opts.UseSqlServer(builder.Configuration.GetConnectionString("Local")));
 
 builder.Services.AddScoped<UnitOfWork>();
 
@@ -42,7 +43,7 @@ builder.Services.AddHttpClient<IAccountService, AccountService>(client =>
     client.BaseAddress = new Uri(builder.Configuration["Binance:BaseUrl"]!));
 
 builder.Services.AddScoped<SpotTradeService>();
-// builder.Services.AddScoped<MarginTradeService>();
+builder.Services.AddScoped<MarginTradeService>();
 
 var app = builder.Build();
 

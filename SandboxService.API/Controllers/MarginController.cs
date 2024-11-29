@@ -1,24 +1,28 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SandboxService.Application;
+using SandboxService.Application.Data.Dtos;
+using SandboxService.Application.Services;
+using SandboxService.Core.Extensions;
 
-namespace SandboxService.API;
+namespace SandboxService.API.Controllers;
 
 [ApiController]
-[Route("margin")]
-public class FuturesController : ControllerBase
+[Route("api/[controller]")]
+public class MarginController(MarginTradeService mts) : ControllerBase
 {
-    // private readonly MarginTradeService _mts;
-
-    // public FuturesController(MarginTradeService mts)
-    // {
-    //     _mts = mts;
-    // }
-
-    [HttpPost]
+    [HttpPost("positions/open")]
     public async Task<IActionResult> OpenPosition(OpenMarginPositionRequest request)
     {
-        // var res = await _mts.OpenPosition(request);
+        var result = await mts.OpenPosition(request);
 
-        return Ok();
+        return Ok(result.MapToResponse());
+    }
+
+    [HttpPost("positions/close")]
+    public async Task<IActionResult> ClosePosition(CloseMarginPositionRequest request)
+    {
+        var result = await mts.ClosePosition(request);
+
+        return Ok(result.MapToResponse());
     }
 }

@@ -11,6 +11,7 @@ public class SandboxContext(DbContextOptions<SandboxContext> options) : DbContex
     public DbSet<Account> Accounts { get; set; }
     public DbSet<Wallet> Wallets { get; set; }
     public DbSet<User> Users { get; set; }
+    public DbSet<MarginPosition> MarginPositions { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

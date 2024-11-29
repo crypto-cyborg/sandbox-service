@@ -33,7 +33,7 @@ public class GlobalExceptionsMiddleware : IMiddleware
 
             switch (ex!.Type)
             {
-                case SandboxExceptionType.RECORD_NOT_FOUND:
+                case SandboxExceptionType.ENTITY_NOT_FOUND:
                     code = HttpStatusCode.NotFound;
                     break;
                 case SandboxExceptionType.INVALID_KEYS:

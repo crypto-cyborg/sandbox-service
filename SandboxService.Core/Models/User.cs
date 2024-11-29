@@ -8,6 +8,8 @@ public class User
 
     public Guid WalletId { get; set; }
     public virtual Wallet Wallet { get; set; }
+
+    public ICollection<MarginPosition> MarginPositions { get; set; } = [];
     
     public byte[] RowVersion { get; set; }
 }

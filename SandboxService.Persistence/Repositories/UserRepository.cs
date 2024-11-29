@@ -13,7 +13,9 @@ public class UserRepository(SandboxContext context) : RepositoryBase<User>(conte
         string includeProperties = "")
     {
         IQueryable<User> query = DbSet
-            .Include(u => u.Wallet.Accounts).ThenInclude(a => a.Currency);
+            .Include(u => u.Wallet.Accounts).ThenInclude(a => a.Currency)
+            .Include(u => u.Wallet.Transactions)
+            .Include(u => u.MarginPositions);
 
         if (filter is not null)
         {
@@ -28,6 +30,7 @@ public class UserRepository(SandboxContext context) : RepositoryBase<User>(conte
         return await DbSet
             .Include(u => u.Wallet.Accounts).ThenInclude(a => a.Currency)
             .Include(u => u.Wallet.Transactions)
+            .Include(u => u.MarginPositions)
             .FirstOrDefaultAsync(u => u.Id == (Guid)id);
     }
 }

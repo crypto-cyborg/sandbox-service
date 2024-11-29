@@ -1,103 +1,127 @@
-﻿using SandboxService.Application.Services.Interfaces;
+﻿using SandboxService.Application.Data.Dtos;
+using SandboxService.Application.Services.Interfaces;
 using SandboxService.Core.Exceptions;
 using SandboxService.Core.Models;
+using SandboxService.Persistence;
 
-namespace SandboxService.Application;
+namespace SandboxService.Application.Services;
 
-// public class MarginTradeService
-// {
-//     private readonly IBinanceService _binanceService;
-//
-//     public MarginTradeService(IBinanceService binanceService)
-//     {
-//         _binanceService = binanceService;
-//     }
-//
-//     public async Task<MarginPosition> OpenPosition(OpenMarginPositionRequest request)
-//     {
-//         var user = _cacheService.Get(request.UserId);
-//         var entryPrice = (await _binanceService.GetPrice(request.Symbol)).Price;
-//
-//         var wallet =
-//             user.Wallets.FirstOrDefault(w => w.Currency == request.Currency)
-//             ?? throw new SandboxException(
-//                 "Required wallet does not exist",
-//                 SandboxExceptionType.WALLET_DOES_NOT_EXIST
-//             );
-//
-//         decimal requiredMargin = request.Amount * entryPrice / request.Leverage;
-//
-//         if (wallet.Balance < requiredMargin)
-//             throw new SandboxException(
-//                 "Insufficient margin",
-//                 SandboxExceptionType.INSUFFICIENT_FUNDS
-//             );
-//
-//         var position = new MarginPosition
-//         {
-//             UserId = request.UserId,
-//             Currency = request.Currency,
-//             Symbol = request.Symbol,
-//             Amount = request.Amount,
-//             EntryPrice = entryPrice,
-//             IsLong = request.IsLong,
-//             Leverage = request.Leverage,
-//         };
-//
-//         user.MarginPositions.Add(position);
-//         wallet.Balance -= requiredMargin;
-//
-//         return position;
-//     }
-//
-//     public async Task<MarginPosition> ClosePosition(CloseMarginPositionRequest request)
-//     {
-//         var user = _cacheService.Get(request.UserId);
-//         var position = user.MarginPositions.FirstOrDefault(p => p.Id == request.PositionId);
-//         var currentPrice = (await _binanceService.GetPrice(position.Symbol)).Price;
-//
-//         if (position == null || position.IsClosed)
-//             throw new InvalidOperationException("Позиция не найдена или уже закрыта.");
-//
-//         var wallet = user.Wallets.FirstOrDefault(w => w.Currency == position.Currency);
-//
-//         decimal pnl;
-//
-//         if (position.IsLong)
-//             pnl = (currentPrice - position.EntryPrice) * position.Amount;
-//         else
-//             pnl = (position.EntryPrice - currentPrice) * position.Amount;
-//
-//         wallet.Balance += pnl;
-//         position.IsClosed = true;
-//         position.CloseDate = DateTime.UtcNow;
-//
-//         return position;
-//     }
-//
-//     public void CheckLiquidation(Guid userId, string currencyCode, decimal currentPrice)
-//     {
-//         var user = _cacheService.Get(userId);
-//
-//         var positions = user.MarginPositions.Where(p =>
-//             p.Currency.Code == currencyCode && !p.IsClosed
-//         );
-//
-//         foreach (var position in positions)
-//         {
-//             decimal marginUsed = position.Amount * position.EntryPrice / position.Leverage;
-//             var wallet = user.Wallets.FirstOrDefault(w => w.Currency.Code == currencyCode);
-//
-//             decimal pnl = position.IsLong
-//                 ? (currentPrice - position.EntryPrice) * position.Amount
-//                 : (position.EntryPrice - currentPrice) * position.Amount;
-//
-//             if (wallet.Balance + pnl < marginUsed)
-//             {
-//                 position.IsClosed = true;
-//                 position.CloseDate = DateTime.UtcNow;
-//                 wallet.Balance += pnl;
-//             }
-//         }
-//     }
-// }
+public class MarginTradeService(IBinanceService binanceService, UnitOfWork unitOfWork)
+{
+    public async Task<MarginPosition> OpenPosition(OpenMarginPositionRequest request)
+    {
+        var user = await GetUserById(request.UserId);
+        var wallet = GetWallet(user, request.Ticker);
+
+        var entryPrice = (await binanceService.GetPrice(request.Symbol)).Price;
+        var requiredMargin = CalculateMargin(request.Amount, entryPrice, request.Leverage);
+
+        if (wallet.Balance < requiredMargin)
+            throw new SandboxException("Insufficient margin", SandboxExceptionType.INSUFFICIENT_FUNDS);
+
+        var currency = await unitOfWork.CurrencyRepository.GetByTickerAsync(request.Ticker);
+
+        var position = new MarginPosition
+        {
+            UserId = request.UserId,
+            Currency = currency!,
+            Symbol = request.Symbol,
+            Amount = request.Amount,
+            EntryPrice = entryPrice,
+            Leverage = request.Leverage,
+            IsLong = request.IsLong,
+            OpenDate = DateTime.UtcNow
+        };
+
+        await unitOfWork.MarginPositionRepository.InsertAsync(position);
+        user.MarginPositions.Add(position);
+        wallet.Balance -= requiredMargin;
+
+        await unitOfWork.SaveAsync();
+        return position;
+    }
+
+    public async Task<MarginPosition> ClosePosition(CloseMarginPositionRequest request)
+    {
+        var user = await GetUserById(request.UserId);
+        var position = GetPosition(user, request.PositionId);
+
+        ValidatePosition(position);
+
+        var currentPrice = (await binanceService.GetPrice(position.Symbol)).Price;
+        var wallet = GetWallet(user, position.Currency.Ticker);
+        var pnl = CalculatePnl(position, currentPrice);
+
+        wallet.Balance += pnl;
+        position.IsClosed = true;
+        position.CloseDate = DateTime.UtcNow;
+
+        await unitOfWork.SaveAsync();
+        return position;
+    }
+
+    public async Task CheckLiquidation(Guid userId, string ticker, decimal currentPrice)
+    {
+        var user = await GetUserById(userId);
+
+        var positionsToLiquidate = user.MarginPositions
+            .Where(p => p.Currency.Ticker == ticker && !p.IsClosed)
+            .Where(p =>
+            {
+                var marginUsed = CalculateMargin(p.Amount, p.EntryPrice, p.Leverage);
+                var wallet = GetWallet(user, ticker);
+                var pnl = CalculatePnl(p, currentPrice);
+                return wallet.Balance + pnl < marginUsed;
+            })
+            .ToList();
+
+        foreach (var position in positionsToLiquidate)
+        {
+            var pnl = CalculatePnl(position, currentPrice);
+            var wallet = GetWallet(user, position.Currency.Ticker);
+
+            position.IsClosed = true;
+            position.CloseDate = DateTime.UtcNow;
+            wallet.Balance += pnl;
+        }
+
+        await unitOfWork.SaveAsync();
+    }
+
+    // Utilities 
+    private async Task<User> GetUserById(Guid userId)
+    {
+        return await unitOfWork.UserRepository.GetByIdAsync(userId)
+               ?? throw new SandboxException("User not found", SandboxExceptionType.ENTITY_NOT_FOUND);
+    }
+
+    private static Account GetWallet(User user, string ticker)
+    {
+        return user.Wallet.Accounts.FirstOrDefault(w => w.Currency.Ticker == ticker)
+               ?? throw new SandboxException("Wallet not found", SandboxExceptionType.WALLET_DOES_NOT_EXIST);
+    }
+
+    private static MarginPosition GetPosition(User user, Guid positionId)
+    {
+        return user.MarginPositions.FirstOrDefault(p => p.Id == positionId)
+               ?? throw new SandboxException("Position not found", SandboxExceptionType.POSITION_NOT_FOUND);
+    }
+
+    private static void ValidatePosition(MarginPosition position)
+    {
+        if (position.IsClosed)
+            throw new SandboxException("Position already closed", SandboxExceptionType.INVALID_OPERATION);
+    }
+
+    private static decimal CalculateMargin(decimal amount, decimal entryPrice, decimal leverage)
+    {
+        return amount * entryPrice / leverage;
+    }
+
+    private static decimal CalculatePnl(MarginPosition position, decimal currentPrice)
+    {
+        return position.IsLong
+            ? (currentPrice - position.EntryPrice) * position.Amount
+            : (position.EntryPrice - currentPrice) * position.Amount;
+    }
+}

@@ -25,10 +25,12 @@ public class UnitOfWork(SandboxContext context)
 
 
     private TransactionRepository? _transactionRepository;
-
     public TransactionRepository TransactionRepository =>
         _transactionRepository ??= new TransactionRepository(_context);
 
+    private MarginPositionRepository? _marginPositionRepository;
+    public MarginPositionRepository MarginPositionRepository =>
+        _marginPositionRepository ??= new MarginPositionRepository(_context);
 
     public async Task SaveAsync() => await _context.SaveChangesAsync();
     
