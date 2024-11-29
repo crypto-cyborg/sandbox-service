@@ -15,5 +15,20 @@ public class Transaction
     public Guid SenderId { get; init; }
     public Guid ReceiverId { get; init; }
 
+    public required TransactionType TransactionType { get; set; }
+    public required TradeType TradeType { get; set; }
+
     public decimal Amount { get; set; }
+}
+
+public enum TransactionType
+{
+    BUY,
+    SELL
+}
+
+public enum TradeType
+{ 
+    SPOT,
+    MARGIN
 }

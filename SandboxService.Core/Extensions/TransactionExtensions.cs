@@ -12,9 +12,11 @@ public static class TransactionExtensions
         DateTimeOffset Time,
         Guid SenderId,
         Guid ReceiverId,
-        decimal Amount);
+        decimal Amount,
+        string TransactionType,
+        string TradeType);
 
-    public static Transaction Create(Guid senderId, Guid receiverId, Guid walletId, decimal amount, int currencyId)
+    public static Transaction Create(Guid senderId, Guid receiverId, Guid walletId, decimal amount, int currencyId, TransactionType transactionType, TradeType tradeType)
     {
         return new Transaction
         {
@@ -22,6 +24,8 @@ public static class TransactionExtensions
             SenderId = senderId,
             ReceiverId = receiverId,
             Amount = amount,
+            TransactionType = transactionType,
+            TradeType = tradeType
         };
     }
 
@@ -34,7 +38,9 @@ public static class TransactionExtensions
             transaction.Timestamp,
             transaction.SenderId,
             transaction.ReceiverId,
-            transaction.Amount);
+            transaction.Amount,
+            transaction.TransactionType.ToString(),
+            transaction.TradeType.ToString());
 
     public static IEnumerable<TransactionReadDto> MapToResponse(this IEnumerable<Transaction> transactions)
         => transactions.Select(t => t.MapToResponse());
