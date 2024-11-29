@@ -9,6 +9,7 @@ using SandboxService.Core.Exceptions;
 using SandboxService.Core.Extensions;
 using SandboxService.Core.Models;
 using SandboxService.Persistence;
+using static SandboxService.Core.Extensions.UserExtensions;
 
 namespace SandboxService.Application.Services;
 
@@ -16,14 +17,25 @@ public class AccountService(HttpClient httpClient, UnitOfWork unitOfWork, UserSe
 {
     public async Task<UserExtensions.UserReadDto> CreateSandboxUser(SanboxInitializeRequest request)
     {
-        var user = await usc.GetUser(request.UserId);
+        var user = await EnsureExists(request.UserId);
 
-        var userData = await CreateUser(user);
+        if (user is not null) return user.MapToResponse();
+
+        var userResponse = await usc.GetUser(request.UserId);
+
+        var userData = await CreateUser(userResponse);
 
         await unitOfWork.UserRepository.InsertAsync(userData);
         await unitOfWork.SaveAsync();
 
         return userData.MapToResponse();
+    }
+
+    private async Task<User?> EnsureExists(Guid userId)
+    {
+        var user = await unitOfWork.UserRepository.GetByIdAsync(userId);
+
+        return user;
     }
 
     private async Task<bool> ValidateKeys(string apiKey, string secretKey)
