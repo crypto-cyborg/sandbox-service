@@ -10,12 +10,21 @@ namespace SandboxService.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class MarginController(MarginTradeService mts, Mediator mediator) : ControllerBase
+public class MarginController : ControllerBase
 {
+    private readonly MarginTradeService _mts;
+    private readonly IMediator _mediator;
+
+    public MarginController(MarginTradeService mts, IMediator mediator)
+    {
+        _mts = mts;
+        _mediator = mediator;
+    }
+
     [HttpPost("positions/open")]
     public async Task<IActionResult> OpenPosition(OpenMarginPositionRequest request)
     {
-        var result = await mts.OpenPosition(request);
+        var result = await _mts.OpenPosition(request);
 
         return Ok(result.MapToResponse());
     }
@@ -23,15 +32,15 @@ public class MarginController(MarginTradeService mts, Mediator mediator) : Contr
     [HttpPost("positions/close")]
     public async Task<IActionResult> ClosePosition(CloseMarginPositionRequest request)
     {
-        var result = await mts.ClosePosition(request);
+        var result = await _mts.ClosePosition(request);
 
         return Ok(result.MapToResponse());
     }
 
-    [HttpGet("margin-positions/{userId}")]
+    [HttpGet("margin-positions/{userId:guid}")]
     public async Task<IActionResult> GetAllPositions(Guid userId)
     {
-        var positions = await mediator.Send(new GetAllPositionsQuery(userId));
+        var positions = await _mediator.Send(new GetAllPositionsQuery(userId));
 
         return Ok(positions);
     }

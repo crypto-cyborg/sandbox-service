@@ -1,3 +1,4 @@
+using System.Net.NetworkInformation;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using SandboxService.API;
@@ -33,7 +34,8 @@ builder.Services.AddDbContext<SandboxContext>(opts =>
 
 builder.Services.AddScoped<UnitOfWork>();
 
-//builder.Services.AddMediatR(Assembly.GetExecutingAssembly());
+builder.Services.AddMediatR(cfg =>
+    cfg.RegisterServicesFromAssemblies(AppDomain.CurrentDomain.GetAssemblies()));
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 

@@ -8,9 +8,12 @@ namespace SandboxService.Application.Commands
     internal class GetAllPositionsQueryHandler(UnitOfWork unitOfWork)
         : IRequestHandler<GetAllPositionsQuery, IEnumerable<MarginPositionRead>>
     {
-        public async Task<IEnumerable<MarginPositionRead>> Handle(GetAllPositionsQuery request, CancellationToken cancellationToken)
+        public async Task<IEnumerable<MarginPositionRead>> Handle(GetAllPositionsQuery request,
+            CancellationToken cancellationToken)
         {
-            var positions = await unitOfWork.MarginPositionRepository.GetAsync(mp => mp.UserId == request.UserId);
+            var positions = await unitOfWork.MarginPositionRepository.GetAsync(
+                mp => mp.UserId == request.UserId,
+                includeProperties: "Currency");
 
             return positions.MapToResponse();
         }
