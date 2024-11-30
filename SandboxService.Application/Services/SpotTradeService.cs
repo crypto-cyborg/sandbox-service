@@ -69,7 +69,8 @@ public class SpotTradeService(IBinanceService binanceService, UnitOfWork unitOfW
         }
 
         var quoteTransaction =
-            TransactionExtensions.Create(quoteAccount.Id, baseAccount.Id, user.Wallet.Id, totalPrice, quoteCurrency.Id, TransactionType.BUY, TradeType.SPOT);
+            TransactionExtensions.Create(quoteAccount.Id, baseAccount.Id, user.Wallet.Id, totalPrice, quoteCurrency.Id,
+                TransactionType.BUY, TradeType.SPOT);
         var baseTransaction = TransactionExtensions.Create(baseAccount.Id, quoteAccount.Id, user.Wallet.Id,
             request.Quantity,
             baseAccount.CurrencyId, TransactionType.BUY, TradeType.SPOT);

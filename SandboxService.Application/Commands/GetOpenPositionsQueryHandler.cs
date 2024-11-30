@@ -5,17 +5,19 @@ using static SandboxService.Core.Extensions.MarginPositionExtensions;
 
 namespace SandboxService.Application.Commands
 {
-    internal class GetAllPositionsQueryHandler(UnitOfWork unitOfWork)
-        : IRequestHandler<GetAllPositionsQuery, IEnumerable<MarginPositionRead>>
+    internal class GetOpenPositionsQueryHandler(UnitOfWork unitOfWork)
+        : IRequestHandler<GetOpenPositionsQuery, IEnumerable<MarginPositionRead>>
     {
-        public async Task<IEnumerable<MarginPositionRead>> Handle(GetAllPositionsQuery request,
+        public async Task<IEnumerable<MarginPositionRead>> Handle(GetOpenPositionsQuery request,
             CancellationToken cancellationToken)
         {
             var user = (await unitOfWork.UserRepository.GetAsync(u => u.ApiKey == request.ApiKey)).FirstOrDefault();
             
             // TODO: null check
 
-            return user.MarginPositions.MapToResponse();
+            var positions = user!.MarginPositions.Where(mp => !mp.IsClosed).MapToResponse();
+
+            return positions;
         }
     }
 }

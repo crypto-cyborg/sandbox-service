@@ -3,7 +3,7 @@ using static SandboxService.Core.Extensions.MarginPositionExtensions;
 
 namespace SandboxService.Application.Commands
 {
-    public class GetAllPositionsQuery(string apiKey) : IRequest<IEnumerable<MarginPositionRead>>
+    public class GetOpenPositionsQuery(string apiKey) : IRequest<IEnumerable<MarginPositionRead>>
     {
         public string ApiKey { get; set; } = apiKey;
     }

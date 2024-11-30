@@ -31,7 +31,7 @@ public class MarginController(MarginTradeService mts, IMediator mediator) : Cont
     [HttpGet("positions/{apiKey}")]
     public async Task<IActionResult> GetAllPositions(string apiKey)
     {
-        var positions = await mediator.Send(new GetAllPositionsQuery(apiKey));
+        var positions = await mediator.Send(new GetOpenPositionsQuery(apiKey));
 
         return Ok(positions);
     }
