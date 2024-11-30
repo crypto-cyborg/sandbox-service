@@ -50,7 +50,8 @@ public class SpotTradeService(IBinanceService binanceService, UnitOfWork unitOfW
             var baseCurrency = await unitOfWork.CurrencyRepository.GetByTickerAsync(request.BaseAsset);
             if (baseCurrency is null)
             {
-                throw new SandboxException("Base currency not found", SandboxExceptionType.INVALID_ASSET);
+                baseCurrency = CurrencyExtensions.Create(request.BaseAsset, request.BaseAsset);
+                await unitOfWork.CurrencyRepository.InsertAsync(baseCurrency);
             }
 
             baseAccount = AccountExtensions.Create(user.Id, baseCurrency.Id, 0);
@@ -65,7 +66,8 @@ public class SpotTradeService(IBinanceService binanceService, UnitOfWork unitOfW
         var quoteCurrency = await unitOfWork.CurrencyRepository.GetByTickerAsync(request.QuoteAsset);
         if (quoteCurrency is null)
         {
-            throw new SandboxException("Quote currency not found", SandboxExceptionType.INVALID_ASSET);
+            quoteCurrency = CurrencyExtensions.Create(request.QuoteAsset, request.QuoteAsset);
+            await unitOfWork.CurrencyRepository.InsertAsync(quoteCurrency);
         }
 
         var quoteTransaction =
