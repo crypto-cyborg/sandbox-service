@@ -1,4 +1,3 @@
-using System.Net.NetworkInformation;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using SandboxService.API;
@@ -9,7 +8,6 @@ using SandboxService.Application.Services.Interfaces;
 using SandboxService.Application.Validators;
 using SandboxService.Persistence;
 using SandboxService.Persistence.Contexts;
-using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,7 +28,7 @@ builder.Services.AddCors(options => options.AddDefaultPolicy(policyBuilder =>
 builder.Services.AddScoped<GlobalExceptionsMiddleware>();
 
 builder.Services.AddDbContext<SandboxContext>(opts =>
-    opts.UseSqlServer(builder.Configuration.GetConnectionString("ccdb-sandbox")));
+    opts.UseSqlServer(builder.Configuration.GetConnectionString("Local")));
 
 builder.Services.AddScoped<UnitOfWork>();
 
@@ -56,6 +54,8 @@ builder.Services.AddHttpClient<IAccountService, AccountService>(client =>
     client.BaseAddress = new Uri(builder.Configuration["Binance:BaseUrl"]!));
 
 builder.Services.AddScoped<SpotTradeService>();
+builder.Services.AddSingleton<MarginBackgroundService>();
+builder.Services.AddHostedService(provider => provider.GetRequiredService<MarginBackgroundService>());
 builder.Services.AddScoped<MarginTradeService>();
 
 var app = builder.Build();

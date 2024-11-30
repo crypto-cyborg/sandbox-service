@@ -14,6 +14,9 @@ public class MarginPosition
     public DateTimeOffset OpenDate { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? CloseDate { get; set; }
 
+    public decimal? TakeProfit { get; set; }
+    public decimal? StopLoss { get; set; }
+
     public User User { get; set; }
     public Currency Currency { get; set; }
 }

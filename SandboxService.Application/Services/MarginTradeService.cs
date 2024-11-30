@@ -1,4 +1,5 @@
-﻿using SandboxService.Application.Data.Dtos;
+﻿using Microsoft.Extensions.DependencyInjection;
+using SandboxService.Application.Data.Dtos;
 using SandboxService.Application.Services.Interfaces;
 using SandboxService.Core.Exceptions;
 using SandboxService.Core.Models;
@@ -6,7 +7,10 @@ using SandboxService.Persistence;
 
 namespace SandboxService.Application.Services;
 
-public class MarginTradeService(IBinanceService binanceService, UnitOfWork unitOfWork)
+public class MarginTradeService(
+    IBinanceService binanceService,
+    UnitOfWork unitOfWork,
+    MarginBackgroundService marginBackgroundService)
 {
     public async Task<MarginPosition> OpenPosition(OpenMarginPositionRequest request)
     {
@@ -30,7 +34,9 @@ public class MarginTradeService(IBinanceService binanceService, UnitOfWork unitO
             EntryPrice = entryPrice,
             Leverage = request.Leverage,
             IsLong = request.IsLong,
-            OpenDate = DateTime.UtcNow
+            OpenDate = DateTimeOffset.UtcNow,
+            TakeProfit = request.TakeProfit,
+            StopLoss = request.StopLoss
         };
 
         await unitOfWork.MarginPositionRepository.InsertAsync(position);
@@ -38,6 +44,9 @@ public class MarginTradeService(IBinanceService binanceService, UnitOfWork unitO
         wallet.Balance -= requiredMargin;
 
         await unitOfWork.SaveAsync();
+
+        marginBackgroundService.StartTrackingPosition(position.Id, request.Symbol, request.UserId);
+
         return position;
     }
 
@@ -57,36 +66,12 @@ public class MarginTradeService(IBinanceService binanceService, UnitOfWork unitO
         position.CloseDate = DateTime.UtcNow;
 
         await unitOfWork.SaveAsync();
+
+        marginBackgroundService.StopTrackingPosition(position.Id);
+
         return position;
     }
 
-    public async Task CheckLiquidation(Guid userId, string ticker, decimal currentPrice)
-    {
-        var user = await GetUserById(userId);
-
-        var positionsToLiquidate = user.MarginPositions
-            .Where(p => p.Currency.Ticker == ticker && !p.IsClosed)
-            .Where(p =>
-            {
-                var marginUsed = CalculateMargin(p.Amount, p.EntryPrice, p.Leverage);
-                var wallet = GetWallet(user, ticker);
-                var pnl = CalculatePnl(p, currentPrice);
-                return wallet.Balance + pnl < marginUsed;
-            })
-            .ToList();
-
-        foreach (var position in positionsToLiquidate)
-        {
-            var pnl = CalculatePnl(position, currentPrice);
-            var wallet = GetWallet(user, position.Currency.Ticker);
-
-            position.IsClosed = true;
-            position.CloseDate = DateTime.UtcNow;
-            wallet.Balance += pnl;
-        }
-
-        await unitOfWork.SaveAsync();
-    }
 
     // Utilities 
     private async Task<User> GetUserById(Guid userId)
