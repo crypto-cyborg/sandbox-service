@@ -11,8 +11,12 @@ public static class AccountExtensions
         Currency Currency,
         decimal Balance);
 
+    public record AccountCreateDto(Guid WalletId, int CurrencyId);
+
     public static Account Create(Guid walletId, int currencyId, decimal balance = 0)
         => new() { WalletId = walletId, CurrencyId = currencyId, Balance = balance };
+
+    public static Account Create(AccountCreateDto data) => Create(data.WalletId, data.CurrencyId);
 
     public static AccountReadDto MapToResponse(this Account account)
         => new(

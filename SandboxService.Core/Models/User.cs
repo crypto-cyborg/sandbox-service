@@ -10,6 +10,7 @@ public class User
     public virtual Wallet Wallet { get; set; }
 
     public ICollection<MarginPosition> MarginPositions { get; set; } = [];
+    public ICollection<Order> Orders { get; set; } = [];
     
     public byte[] RowVersion { get; set; }
 }

@@ -20,4 +20,9 @@ public class AccountController(UnitOfWork unitOfWork) : ControllerBase
 
         return Ok(user.Wallet.MapToResponse());
     }
+
+    // [HttpPost("{userId:guid}/wallet/{walletId:guid}/accounts")]
+    // public async Task<IActionResult> CreateAccount(System.Guid userId, System.Guid walletId)
+    // {
+    // }
 }

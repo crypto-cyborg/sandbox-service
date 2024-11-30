@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System.Text;
+using Microsoft.Extensions.DependencyInjection;
 using SandboxService.Application.Data.Dtos;
 using SandboxService.Application.Services.Interfaces;
 using SandboxService.Core.Exceptions;
@@ -41,12 +42,25 @@ public class MarginTradeService(
         };
 
         await unitOfWork.MarginPositionRepository.InsertAsync(position);
+
+        if (position.TakeProfit != 0)
+        {
+            var order = OrderExtensions.Create(position.Id, OrderType.TAKE_PROFIT, position.Symbol, entryPrice);
+            await unitOfWork.OrderRepository.InsertAsync(order);
+            marginBackgroundService.StartTrackingOrder(order.Id, request.Symbol, request.UserId);
+        }
+
+        if (position.StopLoss != 0)
+        {
+            var order = OrderExtensions.Create(position.Id, OrderType.SPOT_LOSS, position.Symbol, entryPrice);
+            await unitOfWork.OrderRepository.InsertAsync(order);
+            marginBackgroundService.StartTrackingOrder(order.Id, request.Symbol, request.UserId);
+        }
+
         user.MarginPositions.Add(position);
         wallet.Balance -= requiredMargin;
 
         await unitOfWork.SaveAsync();
-
-        marginBackgroundService.StartTrackingPosition(position.Id, request.Symbol, request.UserId);
 
         return position;
     }
@@ -68,7 +82,7 @@ public class MarginTradeService(
 
         await unitOfWork.SaveAsync();
 
-        marginBackgroundService.StopTrackingPosition(position.Id);
+        marginBackgroundService.StopTrackingOrder(position.Id);
 
         return position;
     }
@@ -76,7 +90,7 @@ public class MarginTradeService(
     public async Task<MarginPosition> ChangeStopLoss(Guid positionId, decimal value)
     {
         var position = await unitOfWork.MarginPositionRepository.GetByIdAsync(positionId);
-        
+
         // TODO: null check
 
         position!.StopLoss = value;
@@ -88,7 +102,7 @@ public class MarginTradeService(
     public async Task<MarginPosition> ChangeTakeProfit(Guid positionId, decimal value)
     {
         var position = await unitOfWork.MarginPositionRepository.GetByIdAsync(positionId);
-        
+
         // TODO: null check
 
         position!.TakeProfit = value;
@@ -96,7 +110,7 @@ public class MarginTradeService(
         await unitOfWork.SaveAsync();
         return position;
     }
-    
+
     // Utilities 
     private async Task<User> GetUserById(Guid userId)
     {

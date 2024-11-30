@@ -15,6 +15,7 @@ public class UserRepository(SandboxContext context) : RepositoryBase<User>(conte
         IQueryable<User> query = DbSet
             .Include(u => u.Wallet.Accounts).ThenInclude(a => a.Currency)
             .Include(u => u.Wallet.Transactions)
+            .Include(u => u.Orders)
             .Include(u => u.MarginPositions);
 
         if (filter is not null)
