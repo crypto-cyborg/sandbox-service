@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using SandboxService.Application;
 using SandboxService.Application.Commands;
+using SandboxService.Application.Commands.GetOpenPositions;
 using SandboxService.Application.Data.Dtos;
 using SandboxService.Application.Services;
 using SandboxService.Core.Extensions;
@@ -28,10 +29,10 @@ public class MarginController(MarginTradeService mts, IMediator mediator) : Cont
         return Ok(result.MapToResponse());
     }
 
-    [HttpGet("positions/{apiKey}")]
-    public async Task<IActionResult> GetAllPositions(string apiKey)
+    [HttpGet("positions/{userId:guid}")]
+    public async Task<IActionResult> GetAllPositions(Guid userId)
     {
-        var positions = await mediator.Send(new GetOpenPositionsQuery(apiKey));
+        var positions = await mediator.Send(new GetOpenPositionsQuery(userId));
 
         return Ok(positions);
     }

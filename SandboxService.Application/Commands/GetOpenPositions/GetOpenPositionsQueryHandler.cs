@@ -3,7 +3,7 @@ using SandboxService.Persistence;
 using static SandboxService.Core.Extensions.MarginPositionExtensions;
 
 
-namespace SandboxService.Application.Commands
+namespace SandboxService.Application.Commands.GetOpenPositions
 {
     internal class GetOpenPositionsQueryHandler(UnitOfWork unitOfWork)
         : IRequestHandler<GetOpenPositionsQuery, IEnumerable<MarginPositionRead>>
@@ -11,7 +11,7 @@ namespace SandboxService.Application.Commands
         public async Task<IEnumerable<MarginPositionRead>> Handle(GetOpenPositionsQuery request,
             CancellationToken cancellationToken)
         {
-            var user = (await unitOfWork.UserRepository.GetAsync(u => u.ApiKey == request.ApiKey)).FirstOrDefault();
+            var user = await unitOfWork.UserRepository.GetByIdAsync(request.UserId);
             
             // TODO: null check
 
