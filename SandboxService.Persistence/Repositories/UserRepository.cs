@@ -32,6 +32,7 @@ public class UserRepository(SandboxContext context) : RepositoryBase<User>(conte
             .Include(u => u.Wallet.Accounts).ThenInclude(a => a.Currency)
             .Include(u => u.Wallet.Transactions)
             .Include(u => u.MarginPositions)
+            .Include(u => u.Orders)
             .FirstOrDefaultAsync(u => u.Id == (Guid)id);
     }
 }
