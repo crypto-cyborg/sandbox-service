@@ -5,8 +5,8 @@ using SandboxService.Core.Models;
 
 namespace SandboxService.Application.Commands.CreateAccount;
 
-public class CreateAccountQuery(AccountExtensions.AccountCreateDto data) : IRequest<Result<Account>>
+public class CreateAccountQuery(Guid walletId, int currencyId) : IRequest<Result<Account>>
 {
-    public Guid WalletId { get; } = data.WalletId;
-    public int CurrencyId { get; } = data.CurrencyId;
+    public Guid WalletId { get; } = walletId;
+    public int CurrencyId { get; } = currencyId;
 }

@@ -29,6 +29,7 @@ public class CreateAccountQueryHandler(UnitOfWork unitOfWork) : IRequestHandler<
         var account = AccountExtensions.Create(wallet.Id, currency.Id, 0);
         
         wallet.Accounts.Add(account);
+        await unitOfWork.SaveAsync();
 
         return account;
     }
