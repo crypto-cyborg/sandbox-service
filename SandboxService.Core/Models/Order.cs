@@ -7,6 +7,8 @@ public class Order
     public Guid PositionId { get; set; }
     public virtual MarginPosition Position { get; set; }
 
+    public Guid UserId { get; set; }
+
     public OrderStatus Status { get; set; } = OrderStatus.PENDING;
     public OrderType Type { get; set; }
 
