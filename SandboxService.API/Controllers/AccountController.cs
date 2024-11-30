@@ -1,4 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using MediatR;
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
+using SandboxService.Application.Commands.CreateAccount;
+using SandboxService.Application.Commands.GetWallet;
 using SandboxService.Core.Extensions;
 using SandboxService.Persistence;
 
@@ -6,23 +10,25 @@ namespace SandboxService.API.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class AccountController(UnitOfWork unitOfWork) : ControllerBase
+public class AccountController(UnitOfWork unitOfWork, IMediator mediator) : ControllerBase
 {
-    [HttpGet("{userId:guid}")]
+    [HttpGet("{userId:guid}/wallet")]
     public async Task<IActionResult> GetWallet(Guid userId)
     {
-        var user = await unitOfWork.UserRepository.GetByIdAsync(userId);
+        var result = await mediator.Send(new GetWalletQuery(userId));
 
-        if (user is null)
-        {
-            return NotFound("Required user does not exist");
-        }
-
-        return Ok(user.Wallet.MapToResponse());
+        return result.Match<ActionResult>(
+            succ => Ok(succ.MapToResponse()),
+            err => NotFound(err));
     }
+    
+    [HttpPost("wallet/{walletId:guid}/accounts")]
+    public async Task<IActionResult> CreateAccount(Guid walletId, string ticker)
+    {
+        var result = await mediator.Send(new CreateAccountQuery(walletId, ticker));
 
-    // [HttpPost("{userId:guid}/wallet/{walletId:guid}/accounts")]
-    // public async Task<IActionResult> CreateAccount(System.Guid userId, System.Guid walletId)
-    // {
-    // }
+        return result.Match<ActionResult>(
+            succ => Ok(succ.MapToResponse()),
+            err => NotFound(err.Message));
+    }
 }
