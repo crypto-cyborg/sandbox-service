@@ -15,11 +15,13 @@ public static class MarginPositionExtensions
         bool IsLong,
         bool IsClosed,
         DateTimeOffset OpenDate,
-        DateTimeOffset? CloseDate);
+        DateTimeOffset? CloseDate,
+        decimal? TakeProfit,
+        decimal? StopLoss);
 
     public static MarginPositionRead MapToResponse(this MarginPosition mp)
         => new(mp.Id, mp.UserId, mp.Currency.MapToResponse(), mp.Symbol, mp.Amount, mp.EntryPrice, mp.Leverage,
-            mp.IsLong, mp.IsClosed, mp.OpenDate, mp.CloseDate);
+            mp.IsLong, mp.IsClosed, mp.OpenDate, mp.CloseDate, mp.TakeProfit, mp.StopLoss);
 
     public static IEnumerable<MarginPositionRead> MapToResponse(this IEnumerable<MarginPosition> positions)
         => positions.Select(p => p.MapToResponse());
