@@ -52,9 +52,11 @@ public class SpotTradeService(IBinanceService binanceService, UnitOfWork unitOfW
             {
                 baseCurrency = CurrencyExtensions.Create(request.BaseAsset, request.BaseAsset);
                 await unitOfWork.CurrencyRepository.InsertAsync(baseCurrency);
+                await unitOfWork.SaveAsync();
             }
 
             baseAccount = AccountExtensions.Create(user.Id, baseCurrency.Id, 0);
+            baseCurrency = await unitOfWork.CurrencyRepository.GetByTickerAsync(request.BaseAsset);
 
             await unitOfWork.AccountRepository.InsertAsync(baseAccount);
 
