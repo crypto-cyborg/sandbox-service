@@ -7,6 +7,6 @@ public record OpenMarginPositionRequest(
     string Symbol,
     bool IsLong,
     decimal Leverage,
-    decimal StopLoss,
-    decimal TakeProfit
+    decimal? StopLoss,
+    decimal? TakeProfit
 );

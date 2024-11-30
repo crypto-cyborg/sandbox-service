@@ -33,7 +33,7 @@ public class MarginTradeService(
             Symbol = request.Symbol,
             Amount = request.Amount,
             EntryPrice = entryPrice,
-            Leverage = request.Leverage,
+            Leverage = request.Leverage == 0 ? 1 : request.Leverage,
             IsLong = request.IsLong,
             OpenDate = DateTimeOffset.UtcNow,
             TakeProfit = request.TakeProfit,

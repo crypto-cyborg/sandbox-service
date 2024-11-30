@@ -87,10 +87,10 @@ public class MarginBackgroundService(IServiceProvider serviceProvider) : Backgro
             return;
         }
 
-        if ((position.TakeProfit.HasValue &&
+        if ((position.TakeProfit != 0 &&
              ((position.IsLong && currentPrice >= position.TakeProfit.Value) ||
               (!position.IsLong && currentPrice <= position.TakeProfit.Value))) ||
-            (position.StopLoss.HasValue &&
+            (position.StopLoss != 0 &&
              ((position.IsLong && currentPrice <= position.StopLoss.Value) ||
               (!position.IsLong && currentPrice >= position.StopLoss.Value))))
         {
