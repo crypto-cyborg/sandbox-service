@@ -34,7 +34,7 @@ public class MarginTradeService(
             Symbol = request.Symbol,
             Amount = request.Amount,
             EntryPrice = entryPrice,
-            Leverage = request.Leverage == 0 ? 1 : request.Leverage,
+            Leverage = request.Leverage,
             IsLong = request.IsLong,
             OpenDate = DateTimeOffset.UtcNow,
             TakeProfit = request.TakeProfit,
@@ -80,12 +80,21 @@ public class MarginTradeService(
         position.IsClosed = true;
         position.CloseDate = DateTime.UtcNow;
 
+        var relatedOrders = await unitOfWork.OrderRepository.GetAsync(o => o.PositionId == position.Id);
+        foreach (var order in relatedOrders)
+        {
+            order.Status = OrderStatus.CANCELED;
+            order.CompletedAt = DateTimeOffset.UtcNow;
+            marginBackgroundService.StopTrackingOrder(order.Id);
+        }
+
         await unitOfWork.SaveAsync();
 
         marginBackgroundService.StopTrackingOrder(position.Id);
 
         return position;
     }
+
 
     public async Task<MarginPosition> ChangeStopLoss(Guid positionId, decimal value)
     {

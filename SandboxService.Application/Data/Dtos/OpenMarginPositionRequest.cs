@@ -6,7 +6,14 @@ public record OpenMarginPositionRequest(
     decimal Amount,
     string Symbol,
     bool IsLong,
-    decimal Leverage,
     decimal? StopLoss,
     decimal? TakeProfit
-);
+)
+{
+    private readonly decimal _leverage;
+    public decimal Leverage
+    {
+        get => _leverage;
+        init => _leverage = value == 0 ? 1 : _leverage;
+    }
+};
