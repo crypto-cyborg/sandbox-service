@@ -37,10 +37,10 @@ public class MarginController : ControllerBase
         return Ok(result.MapToResponse());
     }
 
-    [HttpGet("margin-positions/{userId:guid}")]
-    public async Task<IActionResult> GetAllPositions(Guid userId)
+    [HttpGet("margin-positions/{apiKey}")]
+    public async Task<IActionResult> GetAllPositions(string apiKey)
     {
-        var positions = await _mediator.Send(new GetAllPositionsQuery(userId));
+        var positions = await _mediator.Send(new GetAllPositionsQuery(apiKey));
 
         return Ok(positions);
     }

@@ -11,11 +11,11 @@ namespace SandboxService.Application.Commands
         public async Task<IEnumerable<MarginPositionRead>> Handle(GetAllPositionsQuery request,
             CancellationToken cancellationToken)
         {
-            var positions = await unitOfWork.MarginPositionRepository.GetAsync(
-                mp => mp.UserId == request.UserId,
-                includeProperties: "Currency");
+            var user = (await unitOfWork.UserRepository.GetAsync(u => u.ApiKey == request.ApiKey)).FirstOrDefault();
+            
+            // TODO: null check
 
-            return positions.MapToResponse();
+            return user.MarginPositions.MapToResponse();
         }
     }
 }
