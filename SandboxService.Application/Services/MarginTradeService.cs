@@ -84,6 +84,18 @@ public class MarginTradeService(
         await unitOfWork.SaveAsync();
         return position;
     }
+
+    public async Task<MarginPosition> ChangeTakeProfit(Guid positionId, decimal value)
+    {
+        var position = await unitOfWork.MarginPositionRepository.GetByIdAsync(positionId);
+        
+        // TODO: null check
+
+        position!.TakeProfit = value;
+
+        await unitOfWork.SaveAsync();
+        return position;
+    }
     
     // Utilities 
     private async Task<User> GetUserById(Guid userId)

@@ -43,4 +43,12 @@ public class MarginController(MarginTradeService mts, IMediator mediator) : Cont
         
         return Ok(updatedEntity);
     }
+    
+    [HttpPatch("positions/{positionId:guid}/tp")]
+    public async Task<IActionResult> PatchTakeProfit(Guid positionId, decimal takeProfit)
+    {
+        var updatedEntity = await mts.ChangeTakeProfit(positionId, takeProfit);
+        
+        return Ok(updatedEntity);
+    }
 }
