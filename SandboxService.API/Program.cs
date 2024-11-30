@@ -15,6 +15,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
+builder.Logging.AddConsole();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -30,7 +32,7 @@ builder.Services.AddCors(options => options.AddDefaultPolicy(policyBuilder =>
 builder.Services.AddScoped<GlobalExceptionsMiddleware>();
 
 builder.Services.AddDbContext<SandboxContext>(opts =>
-    opts.UseSqlServer(builder.Configuration.GetConnectionString("ccdb-sandbox")));
+    opts.UseSqlServer(builder.Configuration.GetConnectionString("Local")));
 
 builder.Services.AddScoped<UnitOfWork>();
 
@@ -55,6 +57,8 @@ builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddHttpClient<IAccountService, AccountService>(client =>
     client.BaseAddress = new Uri(builder.Configuration["Binance:BaseUrl"]!));
 
+builder.Services.AddSingleton<PriceTrackingService>();
+builder.Services.AddHostedService(provider => provider.GetRequiredService<PriceTrackingService>());
 builder.Services.AddScoped<SpotTradeService>();
 builder.Services.AddScoped<MarginTradeService>();
 

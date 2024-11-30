@@ -37,11 +37,19 @@ public class MarginController : ControllerBase
         return Ok(result.MapToResponse());
     }
 
-    [HttpGet("margin-positions/{userId:guid}")]
+    [HttpGet("positions/{userId:guid}")]
     public async Task<IActionResult> GetAllPositions(Guid userId)
     {
         var positions = await _mediator.Send(new GetAllPositionsQuery(userId));
 
         return Ok(positions);
+    }
+
+    [HttpPatch("positions/{positionId:guid}/sl")]
+    public async Task<IActionResult> UpdateStopLoss(Guid positionId, decimal stopLoss)
+    {
+        var result = await _mts.UpdateStopLoss(positionId, stopLoss);
+
+        return Ok(result);
     }
 }

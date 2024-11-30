@@ -1,4 +1,6 @@
-using Microsoft.Extensions.Configuration;
+using System.Net.WebSockets;
+using System.Text;
+using System.Text.Json;
 using Newtonsoft.Json;
 using SandboxService.Application.Data.Dtos;
 using SandboxService.Application.Services.Interfaces;
@@ -21,5 +23,68 @@ public class BinanceService(HttpClient httpClient) : IBinanceService
             ?? throw new Exception("Failed to deserialize price data from Binance.");
 
         return priceData;
+    }
+
+    public async Task ConnectToTickerStream(string symbol, Action<decimal> onPriceUpdate,
+        CancellationToken cancellationToken)
+    {
+        var url = $"wss://stream.binance.com:9443/ws/{symbol.ToLower()}@ticker";
+
+        using var webSocket = new ClientWebSocket();
+
+        try
+        {
+            await webSocket.ConnectAsync(new Uri(url), cancellationToken);
+
+            Console.WriteLine($"Connected to {url}");
+
+            var buffer = new byte[4096];
+            while (!cancellationToken.IsCancellationRequested && webSocket.State == WebSocketState.Open)
+            {
+                var result = await webSocket.ReceiveAsync(buffer, cancellationToken);
+
+                if (result.MessageType == WebSocketMessageType.Close)
+                {
+                    Console.WriteLine("Connection closed.");
+                    break;
+                }
+
+                var message = Encoding.UTF8.GetString(buffer, 0, result.Count);
+                ProcessMessage(message, onPriceUpdate);
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Error in WebSocket connection: {e.Message}");
+            throw;
+        }
+        finally
+        {
+            if (webSocket.State == WebSocketState.Open)
+            {
+                await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Disconnect", cancellationToken);
+            }
+        }
+    }
+
+    private void ProcessMessage(string message, Action<decimal> onPriceUpdate)
+    {
+        try
+        {
+            var json = JsonDocument.Parse(message);
+            var priceString = json.RootElement.GetProperty("c").GetString();
+            if (decimal.TryParse(priceString, out var price))
+            {
+                onPriceUpdate(price);
+            }
+            else
+            {
+                Console.WriteLine("Failed to parse price.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error processing message: {ex.Message}");
+        }
     }
 }
