@@ -45,14 +45,15 @@ public class MarginTradeService(
 
         if (position.TakeProfit != 0)
         {
-            var order = OrderExtensions.Create(position.Id, OrderType.TAKE_PROFIT, position.Symbol, entryPrice);
+            var order = OrderExtensions.Create(position.Id, OrderType.TAKE_PROFIT, position.Symbol, entryPrice,
+                user.Id);
             await unitOfWork.OrderRepository.InsertAsync(order);
             marginBackgroundService.StartTrackingOrder(order.Id, request.Symbol, request.UserId);
         }
 
         if (position.StopLoss != 0)
         {
-            var order = OrderExtensions.Create(position.Id, OrderType.SPOT_LOSS, position.Symbol, entryPrice);
+            var order = OrderExtensions.Create(position.Id, OrderType.SPOT_LOSS, position.Symbol, entryPrice, user.Id);
             await unitOfWork.OrderRepository.InsertAsync(order);
             marginBackgroundService.StartTrackingOrder(order.Id, request.Symbol, request.UserId);
         }
