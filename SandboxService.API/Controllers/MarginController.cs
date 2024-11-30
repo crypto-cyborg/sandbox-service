@@ -10,21 +10,12 @@ namespace SandboxService.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class MarginController : ControllerBase
+public class MarginController(MarginTradeService mts, IMediator mediator) : ControllerBase
 {
-    private readonly MarginTradeService _mts;
-    private readonly IMediator _mediator;
-
-    public MarginController(MarginTradeService mts, IMediator mediator)
-    {
-        _mts = mts;
-        _mediator = mediator;
-    }
-
     [HttpPost("positions/open")]
     public async Task<IActionResult> OpenPosition(OpenMarginPositionRequest request)
     {
-        var result = await _mts.OpenPosition(request);
+        var result = await mts.OpenPosition(request);
 
         return Ok(result.MapToResponse());
     }
@@ -32,16 +23,24 @@ public class MarginController : ControllerBase
     [HttpPost("positions/close")]
     public async Task<IActionResult> ClosePosition(CloseMarginPositionRequest request)
     {
-        var result = await _mts.ClosePosition(request);
+        var result = await mts.ClosePosition(request);
 
         return Ok(result.MapToResponse());
     }
 
-    [HttpGet("margin-positions/{apiKey}")]
+    [HttpGet("positions/{apiKey}")]
     public async Task<IActionResult> GetAllPositions(string apiKey)
     {
-        var positions = await _mediator.Send(new GetAllPositionsQuery(apiKey));
+        var positions = await mediator.Send(new GetAllPositionsQuery(apiKey));
 
         return Ok(positions);
+    }
+
+    [HttpPatch("positions/{positionId:guid}/sl")]
+    public async Task<IActionResult> PatchStopLoss(Guid positionId, decimal stopLoss)
+    {
+        var updatedEntity = await mts.ChangeStopLoss(positionId, stopLoss);
+        
+        return Ok(updatedEntity);
     }
 }

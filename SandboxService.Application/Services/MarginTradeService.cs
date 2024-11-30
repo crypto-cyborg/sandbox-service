@@ -2,6 +2,7 @@
 using SandboxService.Application.Data.Dtos;
 using SandboxService.Application.Services.Interfaces;
 using SandboxService.Core.Exceptions;
+using SandboxService.Core.Extensions;
 using SandboxService.Core.Models;
 using SandboxService.Persistence;
 
@@ -72,7 +73,18 @@ public class MarginTradeService(
         return position;
     }
 
+    public async Task<MarginPosition> ChangeStopLoss(Guid positionId, decimal value)
+    {
+        var position = await unitOfWork.MarginPositionRepository.GetByIdAsync(positionId);
+        
+        // TODO: null check
 
+        position!.StopLoss = value;
+
+        await unitOfWork.SaveAsync();
+        return position;
+    }
+    
     // Utilities 
     private async Task<User> GetUserById(Guid userId)
     {
