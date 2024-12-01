@@ -14,6 +14,6 @@ public record OpenMarginPositionRequest(
     public decimal Leverage
     {
         get => _leverage;
-        init => _leverage = value == 0 ? 1 : _leverage;
+        init => _leverage = value == 0 ? 1 : value;
     }
 };
