@@ -5,15 +5,13 @@ public record OpenMarginPositionRequest(
     string Ticker,
     decimal Amount,
     string Symbol,
-    bool IsLong,
-    decimal? StopLoss,
-    decimal? TakeProfit
+    bool IsLong
 )
 {
     private readonly decimal _leverage;
     public decimal Leverage
     {
         get => _leverage;
-        init => _leverage = value == 0 ? 1 : _leverage;
+        init => _leverage = value == 0 ? 1 : value;
     }
 };
