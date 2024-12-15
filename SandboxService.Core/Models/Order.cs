@@ -33,7 +33,7 @@ public enum OrderStatus
 
 public enum OrderType
 {
-    SPOT_LOSS,
+    STOP_LOSS,
     TAKE_PROFIT,
     LIMIT,
     MARKET
