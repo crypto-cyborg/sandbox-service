@@ -1,9 +1,9 @@
 ﻿using FluentValidation;
-using SandboxService.Application.Data.Dtos;
+using SandboxService.Core.Interfaces.Services;
 
 namespace SandboxService.Application.Validators;
 
-public class SandboxInitializeValidator : AbstractValidator<SanboxInitializeRequest>
+public class SandboxInitializeValidator : AbstractValidator<SandboxInitializeRequest>
 {
     public SandboxInitializeValidator()
     {

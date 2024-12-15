@@ -17,7 +17,7 @@ public class Order
     public string Symbol { get; set; }
     public decimal PositionAmount { get; set; }
     public decimal Price { get; set; }
-    public decimal? Leverage { get; set; }
+    public decimal Leverage { get; set; }
 
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? CompletedAt { get; set; } = null;

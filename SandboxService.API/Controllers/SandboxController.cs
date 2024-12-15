@@ -1,7 +1,6 @@
 ﻿using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
-using SandboxService.Application.Data.Dtos;
-using SandboxService.Application.Services.Interfaces;
+using SandboxService.Core.Interfaces.Services;
 
 namespace SandboxService.API.Controllers;
 
@@ -11,8 +10,8 @@ public class SandboxController(IAccountService accountService) : ControllerBase
 {
     [HttpPost("initialize")]
     public async Task<IActionResult> Initialize(
-        SanboxInitializeRequest request,
-        IValidator<SanboxInitializeRequest> validator
+        SandboxInitializeRequest request,
+        IValidator<SandboxInitializeRequest> validator
     )
     {
         var validation = await validator.ValidateAsync(request);

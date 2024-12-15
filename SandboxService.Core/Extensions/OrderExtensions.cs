@@ -22,7 +22,7 @@ public static class OrderExtensions
         {
             Type = orderType,
             Symbol = symbol,
-            Amount = amount,
+            PositionAmount = amount,
             Price = price,
             IsLong = isLong,
             CurrencyId = currencyId,
@@ -32,7 +32,7 @@ public static class OrderExtensions
 
     public static OrderReadDto MapToResponse(this Order order)
         => new OrderReadDto(order.Id, order.PositionId, order.Status.ToString(), order.Type.ToString(),
-            order.Symbol, order.Amount, order.Price, order.IsLong, order.CreatedAt, order.CompletedAt);
+            order.Symbol, order.PositionAmount, order.Price, order.IsLong, order.CreatedAt, order.CompletedAt);
 
     public static IEnumerable<OrderReadDto> MapToResponse(this IEnumerable<Order> orders)
         => orders.Select(o => o.MapToResponse());

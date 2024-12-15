@@ -1,10 +1,8 @@
 ﻿using LanguageExt.Common;
-using SandboxService.Application.Services.Interfaces;
-using SandboxService.Core.Extensions;
 using SandboxService.Core.Models;
 using SandboxService.Persistence;
 
-namespace SandboxService.Application.Services;
+namespace SandboxService.Core.Interfaces.Services;
 
 public class WalletService(UnitOfWork unitOfWork) : IWalletService
 {

@@ -9,7 +9,7 @@ public static class MarginPositionExtensions
         Guid UserId,
         CurrencyExtensions.CurrencyReadDto Currency,
         string Symbol,
-        decimal Amount,
+        decimal PositionAmount,
         decimal EntryPrice,
         decimal Leverage,
         bool IsLong,
@@ -32,7 +32,7 @@ public static class MarginPositionExtensions
     }
 
     public static MarginPositionRead MapToResponse(this MarginPosition mp)
-        => new(mp.Id, mp.UserId, mp.Currency.MapToResponse(), mp.Symbol, mp.Amount, mp.EntryPrice, mp.Leverage,
+        => new(mp.Id, mp.UserId, mp.Currency.MapToResponse(), mp.Symbol, mp.PositionAmount, mp.EntryPrice, mp.Leverage,
             mp.IsLong, mp.IsClosed, mp.OpenDate, mp.CloseDate);
 
     public static IEnumerable<MarginPositionRead> MapToResponse(this IEnumerable<MarginPosition> positions)

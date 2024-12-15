@@ -2,7 +2,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using SandboxService.Application.Services.Interfaces;
+using SandboxService.Application.Utilities;
+using SandboxService.Core.Interfaces.Services;
 using SandboxService.Core.Models;
 using SandboxService.Persistence;
 
@@ -94,7 +95,7 @@ public class MarginBackgroundService(IServiceProvider serviceProvider, ILogger<M
         }
 
         var position = order.Position;
-        var pnl = CalculatePnl(position, currentPrice);
+        var pnl = MarginUtilities.CalculatePnl(position, currentPrice);
         var account = user?.Wallet.Accounts.FirstOrDefault(w => w.Currency.Ticker == position.Currency.Ticker);
 
         if (account == null)
@@ -104,7 +105,8 @@ public class MarginBackgroundService(IServiceProvider serviceProvider, ILogger<M
             return;
         }
 
-        var marginUsed = CalculateMargin(position.Amount, position.EntryPrice, position.Leverage);
+        var marginUsed =
+            MarginUtilities.CalculateMargin(position.PositionAmount, position.EntryPrice, position.Leverage);
 
         if (account.Balance + pnl < marginUsed)
         {
@@ -146,17 +148,5 @@ public class MarginBackgroundService(IServiceProvider serviceProvider, ILogger<M
 
         await unitOfWork.SaveAsync();
         StopTrackingOrder(order.Id);
-    }
-
-    private static decimal CalculateMargin(decimal amount, decimal entryPrice, decimal leverage)
-    {
-        return amount * entryPrice / leverage;
-    }
-
-    private static decimal CalculatePnl(MarginPosition position, decimal currentPrice)
-    {
-        return position.IsLong
-            ? (currentPrice - position.EntryPrice) * position.Amount
-            : (position.EntryPrice - currentPrice) * position.Amount;
     }
 }

@@ -1,8 +1,8 @@
-﻿using SandboxService.Application.Data.Dtos;
-using SandboxService.Application.Services.Interfaces;
-using SandboxService.Core.Extensions;
+﻿using SandboxService.Core.Extensions;
+using SandboxService.Core.Interfaces.Services;
 using SandboxService.Core.Models;
 using SandboxService.Persistence;
+using SandboxService.Shared.Dtos;
 
 namespace SandboxService.Application.Services
 {

@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
-using SandboxService.Application.Data.Dtos;
 using SandboxService.Application.Services;
 using SandboxService.Core.Models;
+using SandboxService.Shared.Dtos;
 
 namespace SandboxService.API.Controllers;
 

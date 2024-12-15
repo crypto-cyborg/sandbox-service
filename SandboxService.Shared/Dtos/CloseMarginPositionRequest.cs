@@ -1,4 +1,4 @@
-﻿namespace SandboxService.Application;
+﻿namespace SandboxService.Shared.Dtos;
 
 public record class CloseMarginPositionRequest
 {

@@ -1,21 +1,19 @@
 ﻿using System.Diagnostics.Contracts;
 using System.Security.Cryptography;
 using System.Text;
-using Microsoft.Extensions.Configuration;
-using SandboxService.Application.Data.Dtos;
 using SandboxService.Application.ServiceClients;
-using SandboxService.Application.Services.Interfaces;
 using SandboxService.Core.Exceptions;
 using SandboxService.Core.Extensions;
+using SandboxService.Core.Interfaces.Services;
 using SandboxService.Core.Models;
 using SandboxService.Persistence;
-using static SandboxService.Core.Extensions.UserExtensions;
+using SandboxService.Shared.Dtos;
 
 namespace SandboxService.Application.Services;
 
 public class AccountService(HttpClient httpClient, UnitOfWork unitOfWork, UserServiceClient usc) : IAccountService
 {
-    public async Task<UserExtensions.UserReadDto> CreateSandboxUser(SanboxInitializeRequest request)
+    public async Task<UserExtensions.UserReadDto> CreateSandboxUser(SandboxInitializeRequest request)
     {
         var user = await EnsureExists(request.UserId);
 

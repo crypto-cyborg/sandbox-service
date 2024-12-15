@@ -1,7 +1,7 @@
 ﻿using LanguageExt.Common;
 using SandboxService.Core.Models;
 
-namespace SandboxService.Application.Services.Interfaces;
+namespace SandboxService.Core.Interfaces.Services;
 
 public interface IWalletService
 {

@@ -1,7 +1,6 @@
-using System;
-using SandboxService.Application.Data.Dtos;
+namespace SandboxService.Core.Interfaces.Services;
 
-namespace SandboxService.Application.Services.Interfaces;
+public record BinancePriceResponse(string Symbol, decimal Price);
 
 public interface IBinanceService
 {

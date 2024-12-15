@@ -1,3 +1,3 @@
-﻿namespace SandboxService.Application.Data.Dtos;
+﻿namespace SandboxService.Shared.Dtos;
 
 public record GetUserResponse(Guid Id, string ApiKey, string SecretKey);

@@ -1,6 +1,5 @@
-﻿using LanguageExt.Common;
-using Newtonsoft.Json;
-using SandboxService.Application.Data.Dtos;
+﻿using Newtonsoft.Json;
+using SandboxService.Shared.Dtos;
 
 namespace SandboxService.Application.ServiceClients;
 

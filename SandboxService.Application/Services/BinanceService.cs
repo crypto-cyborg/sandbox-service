@@ -1,10 +1,8 @@
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
-using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
-using SandboxService.Application.Data.Dtos;
-using SandboxService.Application.Services.Interfaces;
+using SandboxService.Core.Interfaces.Services;
 
 namespace SandboxService.Application.Services;
 

@@ -1,5 +1,5 @@
-﻿using SandboxService.Application.Services.Interfaces;
-using SandboxService.Core.Extensions;
+﻿using SandboxService.Core.Extensions;
+using SandboxService.Core.Interfaces.Services;
 using SandboxService.Persistence;
 
 namespace SandboxService.Application.Services;

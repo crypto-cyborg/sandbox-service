@@ -1,6 +1,6 @@
 ﻿using SandboxService.Core.Extensions;
 
-namespace SandboxService.Application.Services.Interfaces;
+namespace SandboxService.Core.Interfaces.Services;
 
 public interface ICurrencyService
 {

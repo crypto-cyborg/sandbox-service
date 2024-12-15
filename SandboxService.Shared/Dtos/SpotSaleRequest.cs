@@ -1,4 +1,4 @@
-namespace SandboxService.Application.Data.Dtos;
+namespace SandboxService.Shared.Dtos;
 
 public record class SpotSaleRequest
 {

@@ -1,11 +1,9 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using SandboxService.Application;
-using SandboxService.Application.Commands;
 using SandboxService.Application.Commands.GetOpenPositions;
-using SandboxService.Application.Data.Dtos;
 using SandboxService.Application.Services;
 using SandboxService.Core.Extensions;
+using SandboxService.Shared.Dtos;
 
 namespace SandboxService.API.Controllers;
 

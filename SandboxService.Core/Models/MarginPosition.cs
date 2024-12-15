@@ -8,7 +8,7 @@ public class MarginPosition
     public string Symbol { get; set; }
     public decimal PositionAmount { get; set; }
     public decimal EntryPrice { get; set; }
-    public decimal? Leverage { get; set; }
+    public decimal Leverage { get; set; }
     public bool IsLong { get; set; }
     public bool IsClosed { get; set; } = false;
     public DateTimeOffset OpenDate { get; set; } = DateTimeOffset.UtcNow;

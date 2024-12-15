@@ -1,11 +1,9 @@
-﻿using System.Text;
-using Microsoft.Extensions.DependencyInjection;
-using SandboxService.Application.Data.Dtos;
-using SandboxService.Application.Services.Interfaces;
+﻿using SandboxService.Application.Utilities;
 using SandboxService.Core.Exceptions;
-using SandboxService.Core.Extensions;
+using SandboxService.Core.Interfaces.Services;
 using SandboxService.Core.Models;
 using SandboxService.Persistence;
+using SandboxService.Shared.Dtos;
 
 namespace SandboxService.Application.Services;
 
@@ -20,7 +18,7 @@ public class MarginTradeService(
         var wallet = GetWallet(user, request.Ticker);
 
         var entryPrice = (await binanceService.GetPrice(request.Symbol)).Price;
-        var requiredMargin = CalculateMargin(request.Amount, entryPrice, request.Leverage);
+        var requiredMargin = MarginUtilities.CalculateMargin(request.Amount, entryPrice, request.Leverage);
 
         if (wallet.Balance < requiredMargin)
             throw new SandboxException("Insufficient margin", SandboxExceptionType.INSUFFICIENT_FUNDS);
@@ -32,7 +30,7 @@ public class MarginTradeService(
             UserId = request.UserId,
             Currency = currency!,
             Symbol = request.Symbol,
-            Amount = request.Amount,
+            PositionAmount = request.Amount,
             EntryPrice = entryPrice,
             Leverage = request.Leverage,
             IsLong = request.IsLong,
@@ -54,11 +52,11 @@ public class MarginTradeService(
         var user = await GetUserById(request.UserId);
         var position = GetPosition(user, request.PositionId);
 
-        ValidatePosition(position);
+        MarginUtilities.ValidatePosition(position);
 
         var currentPrice = (await binanceService.GetPrice(position.Symbol)).Price;
         var wallet = GetWallet(user, position.Currency.Ticker);
-        var pnl = CalculatePnl(position, currentPrice);
+        var pnl = MarginUtilities.CalculatePnl(position, currentPrice);
 
         wallet.Balance += pnl;
         position.IsClosed = true;
@@ -120,23 +118,5 @@ public class MarginTradeService(
     {
         return user.MarginPositions.FirstOrDefault(p => p.Id == positionId)
                ?? throw new SandboxException("Position not found", SandboxExceptionType.POSITION_NOT_FOUND);
-    }
-
-    private static void ValidatePosition(MarginPosition position)
-    {
-        if (position.IsClosed)
-            throw new SandboxException("Position already closed", SandboxExceptionType.INVALID_OPERATION);
-    }
-
-    private static decimal CalculateMargin(decimal amount, decimal entryPrice, decimal leverage)
-    {
-        return amount * entryPrice / leverage;
-    }
-
-    private static decimal CalculatePnl(MarginPosition position, decimal currentPrice)
-    {
-        return position.IsLong
-            ? (currentPrice - position.EntryPrice) * position.Amount
-            : (position.EntryPrice - currentPrice) * position.Amount;
     }
 }
