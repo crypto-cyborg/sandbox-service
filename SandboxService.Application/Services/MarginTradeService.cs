@@ -37,26 +37,9 @@ public class MarginTradeService(
             Leverage = request.Leverage,
             IsLong = request.IsLong,
             OpenDate = DateTimeOffset.UtcNow,
-            TakeProfit = request.TakeProfit,
-            StopLoss = request.StopLoss
         };
 
         await unitOfWork.MarginPositionRepository.InsertAsync(position);
-
-        if (position.TakeProfit != 0)
-        {
-            var order = OrderExtensions.Create(position.Id, OrderType.TAKE_PROFIT, position.Symbol, entryPrice,
-                user.Id);
-            await unitOfWork.OrderRepository.InsertAsync(order);
-            marginBackgroundService.StartTrackingOrder(order.Id, request.Symbol, request.UserId);
-        }
-
-        if (position.StopLoss != 0)
-        {
-            var order = OrderExtensions.Create(position.Id, OrderType.SPOT_LOSS, position.Symbol, entryPrice, user.Id);
-            await unitOfWork.OrderRepository.InsertAsync(order);
-            marginBackgroundService.StartTrackingOrder(order.Id, request.Symbol, request.UserId);
-        }
 
         user.MarginPositions.Add(position);
         wallet.Balance -= requiredMargin;
@@ -96,29 +79,28 @@ public class MarginTradeService(
         return position;
     }
 
-
-    public async Task<MarginPosition> ChangeStopLoss(Guid positionId, decimal value)
+    public async Task<Order> ChangeStopLoss(Guid orderId, decimal value)
     {
-        var position = await unitOfWork.MarginPositionRepository.GetByIdAsync(positionId);
+        var order = await unitOfWork.OrderRepository.GetByIdAsync(orderId);
 
         // TODO: null check
 
-        position!.StopLoss = value;
+        order!.Price = value;
 
         await unitOfWork.SaveAsync();
-        return position;
+        return order;
     }
 
-    public async Task<MarginPosition> ChangeTakeProfit(Guid positionId, decimal value)
+    public async Task<Order> ChangeTakeProfit(Guid orderId, decimal value)
     {
-        var position = await unitOfWork.MarginPositionRepository.GetByIdAsync(positionId);
+        var order = await unitOfWork.OrderRepository.GetByIdAsync(orderId);
 
         // TODO: null check
 
-        position!.TakeProfit = value;
+        order!.Price = value;
 
         await unitOfWork.SaveAsync();
-        return position;
+        return order;
     }
 
     // Utilities 

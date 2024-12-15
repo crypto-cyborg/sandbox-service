@@ -6,17 +6,14 @@ public class MarginPosition
     public Guid UserId { get; set; }
     public int CurrencyId { get; set; }
     public string Symbol { get; set; }
-    public decimal Amount { get; set; }
+    public decimal PositionAmount { get; set; }
     public decimal EntryPrice { get; set; }
-    public decimal Leverage { get; set; }
+    public decimal? Leverage { get; set; }
     public bool IsLong { get; set; }
-    public bool IsClosed { get; set; }
+    public bool IsClosed { get; set; } = false;
     public DateTimeOffset OpenDate { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? CloseDate { get; set; }
 
-    public decimal? TakeProfit { get; set; }
-    public decimal? StopLoss { get; set; }
-
-    public User User { get; set; }
-    public Currency Currency { get; set; }
+    public virtual User User { get; set; }
+    public virtual Currency Currency { get; set; }
 }

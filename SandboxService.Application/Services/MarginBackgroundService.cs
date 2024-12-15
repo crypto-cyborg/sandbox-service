@@ -112,12 +112,12 @@ public class MarginBackgroundService(IServiceProvider serviceProvider, ILogger<M
             return;
         }
 
-        if ((position.TakeProfit != 0 &&
-             ((position.IsLong && currentPrice >= position.TakeProfit.Value) ||
-              (!position.IsLong && currentPrice <= position.TakeProfit.Value))) ||
-            (position.StopLoss != 0 &&
-             ((position.IsLong && currentPrice <= position.StopLoss.Value) ||
-              (!position.IsLong && currentPrice >= position.StopLoss.Value))))
+        if ((order.Price != 0 &&
+             ((order.IsLong && currentPrice >= order.Price) ||
+              (!order.IsLong && currentPrice <= order.Price))) ||
+            (order.Price != 0 &&
+             ((order.IsLong && currentPrice <= order.Price) ||
+              (!order.IsLong && currentPrice >= order.Price))))
         {
             await HandlePositionClosure(unitOfWork, position, order, pnl, account, "TP/SL triggered");
         }

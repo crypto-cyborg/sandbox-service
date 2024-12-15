@@ -5,9 +5,7 @@ public record OpenMarginPositionRequest(
     string Ticker,
     decimal Amount,
     string Symbol,
-    bool IsLong,
-    decimal? StopLoss,
-    decimal? TakeProfit
+    bool IsLong
 )
 {
     private readonly decimal _leverage;
