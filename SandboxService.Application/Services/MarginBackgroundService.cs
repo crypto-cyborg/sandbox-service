@@ -2,7 +2,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using SandboxService.Application.Utilities;
 using SandboxService.Core.Interfaces.Services;
 using SandboxService.Core.Models;
 using SandboxService.Persistence;
@@ -12,7 +11,7 @@ namespace SandboxService.Application.Services;
 public class MarginBackgroundService(IServiceProvider serviceProvider, ILogger<MarginBackgroundService> logger)
     : BackgroundService
 {
-    private readonly ConcurrentDictionary<Guid, CancellationTokenSource> _activePositions = new();
+    private readonly ConcurrentDictionary<Guid, CancellationTokenSource> _activeOrders = new();
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -25,7 +24,7 @@ public class MarginBackgroundService(IServiceProvider serviceProvider, ILogger<M
     public void StartTrackingOrder(Guid orderId, string symbol, Guid userId)
     {
         var cts = new CancellationTokenSource();
-        if (!_activePositions.TryAdd(orderId, cts))
+        if (!_activeOrders.TryAdd(orderId, cts))
         {
             logger.LogWarning("Order {OrderId} is already being tracked.", orderId);
             return;
@@ -38,7 +37,7 @@ public class MarginBackgroundService(IServiceProvider serviceProvider, ILogger<M
 
     public void StopTrackingOrder(Guid orderId)
     {
-        if (_activePositions.TryRemove(orderId, out var cts))
+        if (_activeOrders.TryRemove(orderId, out var cts))
         {
             cts.Cancel();
             cts.Dispose();
@@ -61,11 +60,12 @@ public class MarginBackgroundService(IServiceProvider serviceProvider, ILogger<M
             {
                 using var innerScope = serviceProvider.CreateScope();
                 var unitOfWork = innerScope.ServiceProvider.GetRequiredService<UnitOfWork>();
+                var positionService = innerScope.ServiceProvider.GetRequiredService<IPositionService>();
+                var orderService = innerScope.ServiceProvider.GetRequiredService<OrderService>();
 
-                if (cancellationToken.IsCancellationRequested)
-                    return;
+                if (cancellationToken.IsCancellationRequested) return;
 
-                await CheckOrder(unitOfWork, userId, orderId, currentPrice);
+                await CheckOrder(unitOfWork, positionService, orderService, userId, orderId, currentPrice);
             }, cancellationToken);
         }
         catch (OperationCanceledException)
@@ -82,71 +82,69 @@ public class MarginBackgroundService(IServiceProvider serviceProvider, ILogger<M
         }
     }
 
-    private async Task CheckOrder(UnitOfWork unitOfWork, Guid userId, Guid orderId, decimal currentPrice)
+    private async Task CheckOrder(
+        UnitOfWork unitOfWork,
+        IPositionService positionService,
+        OrderService orderService,
+        Guid userId,
+        Guid orderId,
+        decimal currentPrice)
     {
         var user = await unitOfWork.UserRepository.GetByIdAsync(userId);
         var order = await unitOfWork.OrderRepository.GetByIdAsync(orderId);
 
-        if (order == null)
+        if (order is null)
         {
             logger.LogWarning("Order {OrderId} not found.", orderId);
             StopTrackingOrder(orderId);
             return;
         }
 
-        var position = order.Position;
-        var pnl = MarginUtilities.CalculatePnl(position, currentPrice);
-        var account = user?.Wallet.Accounts.FirstOrDefault(w => w.Currency.Ticker == position.Currency.Ticker);
-
-        if (account == null)
+        switch (order.Type)
         {
-            logger.LogWarning("Account for user {UserId} not found.", userId);
-            StopTrackingOrder(orderId);
-            return;
+            case OrderType.STOP_LOSS:
+            {
+                if ((order.IsLong && currentPrice <= order.Price) ||
+                    (!order.IsLong && currentPrice >= order.Price))
+                {
+                    await positionService.Close(order.PositionId);
+                    await orderService.Close(orderId, OrderStatus.COMPLETED);
+                    logger.LogInformation("Stop Loss triggered for Order {OrderId}.", orderId);
+                    StopTrackingOrder(orderId);
+                }
+
+                break;
+            }
+
+            case OrderType.TAKE_PROFIT:
+            {
+                if ((order.IsLong && currentPrice >= order.Price) ||
+                    (!order.IsLong && currentPrice <= order.Price))
+                {
+                    await positionService.Close(order.PositionId);
+                    await orderService.Close(orderId, OrderStatus.COMPLETED);
+                    logger.LogInformation("Take Profit triggered for Order {OrderId}.", orderId);
+                    StopTrackingOrder(orderId);
+                }
+
+                break;
+            }
+
+            case OrderType.LIMIT:
+            {
+                if (order.Price < currentPrice)
+                {
+                    var pos = await positionService.Open(order);
+                    await orderService.Close(orderId, OrderStatus.COMPLETED);
+                    StopTrackingOrder(orderId);
+                }
+
+                break;
+            }
+
+            case OrderType.MARKET:
+            default:
+                throw new ArgumentOutOfRangeException($"Cannot handle value: ${order.Type}");
         }
-
-        var marginUsed =
-            MarginUtilities.CalculateMargin(position.PositionAmount, position.EntryPrice, position.Leverage);
-
-        if (account.Balance + pnl < marginUsed)
-        {
-            await HandlePositionClosure(unitOfWork, position, order, pnl, account, "liquidation");
-            return;
-        }
-
-        if ((order.Price != 0 &&
-             ((order.IsLong && currentPrice >= order.Price) ||
-              (!order.IsLong && currentPrice <= order.Price))) ||
-            (order.Price != 0 &&
-             ((order.IsLong && currentPrice <= order.Price) ||
-              (!order.IsLong && currentPrice >= order.Price))))
-        {
-            await HandlePositionClosure(unitOfWork, position, order, pnl, account, "TP/SL triggered");
-        }
-    }
-
-    private async Task HandlePositionClosure(UnitOfWork unitOfWork, MarginPosition position, Order order, decimal pnl,
-        Account account, string reason)
-    {
-        position.IsClosed = true;
-        position.CloseDate = DateTime.UtcNow;
-        account.Balance += pnl;
-
-        order.CompletedAt = DateTimeOffset.UtcNow;
-        order.Status = OrderStatus.COMPLETED;
-
-        var relatedOrders =
-            await unitOfWork.OrderRepository.GetAsync(o => o.PositionId == position.Id && o.Id != order.Id);
-        foreach (var relatedOrder in relatedOrders)
-        {
-            relatedOrder.Status = OrderStatus.CANCELED;
-            relatedOrder.CompletedAt = DateTimeOffset.UtcNow;
-            StopTrackingOrder(relatedOrder.Id);
-        }
-
-        logger.LogInformation("Position {PositionId} closed due to {Reason}.", position.Id, reason);
-
-        await unitOfWork.SaveAsync();
-        StopTrackingOrder(order.Id);
     }
 }

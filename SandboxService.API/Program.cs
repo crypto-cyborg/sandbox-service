@@ -7,6 +7,7 @@ using SandboxService.Application.Validators;
 using SandboxService.Core.Interfaces.Services;
 using SandboxService.Persistence;
 using SandboxService.Persistence.Contexts;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,7 +30,7 @@ builder.Services.AddCors(options => options.AddDefaultPolicy(policyBuilder =>
 builder.Services.AddScoped<GlobalExceptionsMiddleware>();
 
 builder.Services.AddDbContext<SandboxContext>(opts =>
-    opts.UseSqlServer(builder.Configuration.GetConnectionString("Step")));
+    opts.UseSqlServer(builder.Configuration.GetConnectionString("ccdb-sandbox")));
 
 builder.Services.AddScoped<UnitOfWork>();
 
@@ -54,6 +55,8 @@ builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddHttpClient<IAccountService, AccountService>(client =>
     client.BaseAddress = new Uri(builder.Configuration["Binance:BaseUrl"]!));
 
+builder.Services.AddScoped<IPositionService, PositionService>();
+
 builder.Services.AddScoped<SpotTradeService>();
 builder.Services.AddScoped<OrderService>();
 builder.Services.AddSingleton<MarginBackgroundService>();
@@ -66,10 +69,9 @@ var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwagger(opts => opts.RouteTemplate = "openapi/{documentName}.json");
+    app.MapScalarApiReference();
 }
-
 app.UseCors();
 
 app.UseHttpsRedirection();

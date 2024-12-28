@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SandboxService.Persistence.Contexts;
 
@@ -11,9 +12,11 @@ using SandboxService.Persistence.Contexts;
 namespace SandboxService.Persistence.Migrations
 {
     [DbContext(typeof(SandboxContext))]
-    partial class SandboxContextModelSnapshot : ModelSnapshot
+    [Migration("20241224162059_MinorUpdates1")]
+    partial class MinorUpdates1
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -95,9 +98,6 @@ namespace SandboxService.Persistence.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal>("EntryPrice")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("ExitPrice")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<bool>("IsClosed")
